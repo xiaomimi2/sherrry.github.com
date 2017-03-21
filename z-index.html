@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style>
+		.box{
+			width:200px;
+			
+		}
+		.box1{
+
+		}
+	</style>
+</head>
+<body>
+	<div class="box">
+		<span>haha</span>
+	</div>
+	<div class="box1">
+		<span>wcckvjljljfldj</span>
+	</div>
+</body>
+</html>
+<!-- z-index
+auto 默认值
+整数值
+继承值
+
+
+基本特性
+1.支持负值
+2.支持css3 animate动画
+
+不考虑css3只有定位元素z-index有作用
+position,relative,absolute.fixed,sticky
+
+没有嵌套
+1.后来居上
+2.那个大那个上
+
+发生嵌套
+1.祖先优先原则，连个分别由不同父级嵌套的元素，前提是不是z-index:auto
+z-index:auto 相当于z-index:0;他不会再产生新的层叠上下文。
+这种情况下
+<div></div>
+<div z-index:1></div>
+这两个比较是第一个的层叠水平比较高。
+
+
+层叠上下文和层叠水平
+层叠上下文是html元素中的三维概念z轴方向
+
+
+页面根元素天生具有层叠上下文
+z-index的值为数值的定位元素也具有层叠上下文。
+
+其他属性。能创建层叠上下文
+1.z-index值不为auto的flex（display:flex|inline-flex）.父级是flex盒子。子集直接设置了z-index数值。
+2.元素的opacity的值不是1
+3.元素的transform的值不是none
+4.mix-blend-mode 不是normal
+5.filter不是none 不是ie678的那个。
+6.isolation的值是isolate 独立
+7.position:fixed声明
+8.will-change指定的属性值为上面任意一个
+9.元素的-webkit-overflow-scrolling 设为touch
+
+
+
+层叠上下文中的每个元素层叠水平
+
+层叠水平和z-index不是一个东西。普通元素也有层叠水平。
+
+层叠上下文的几个特性
+1.可嵌套
+2.每个层叠上下文元素和兄弟元素无关，只和子孙有关
+3.每个层叠上下文是自称体系的。
+
+层叠顺序
+特定的垂直显示顺序。
+7阶层叠水平
+层叠上下文元素的background或border<负z-index < block块状水平盒子<float浮动盒子<inline/inline-block水平盒子<z-index:auto或者z-index:0<z-index正值。
+
+装饰  布局  内容
+
+背景色覆盖是层叠顺序。文字覆盖是后来居上。
+
+
+
+z-index的行为表现
+1、z-index:auto    可以看成z-index:0
+2、 z-index不为auto可以创建层叠上下文
+3、z-index层叠顺序的比较止步于父级层叠上下文。
+
+定位元素会高于普通元素。因为根据七级层叠顺序比较可得出。
+
+在IE7下z-index:auto也会创建层叠上下文
+
+
+组件层级计数器
+获得body下子元素的最大z-index值。
+
+赋值z-index 可访问性隐藏
+
+
+总结
+1、根元素具有默认拥有层叠上下文
+
+2、通常通过设置z-index的数值，同时是定位元素可以将它变成层叠上下文。还有的其他的css3属性的变化也可以
+。
+3、当一个元素刚刚变成层叠上下文元素的时候。它的父级如果没有变成层级上下文元素。那么他会直接和根元素进行比较。根据七级层叠水平。如果它设置的z-index的值是负值，那么会在根元素的背景或者边框之上。而不是直接在父级的背景色上面。
+
+4.层叠上下文元素的background或border<负z-index < block块状水平盒子<float浮动盒子<inline/inline-block水平盒子<z-index:auto或者z-index:0<z-index正值。注意第一项是在层叠上下文元素。这里应该是指靠的最近的层叠上下文元素。不论是父子还是兄弟的级别。
+
+5.同级层叠上下文相同默认背景色覆盖是层叠顺序。文字覆盖是后来居上。层级不同则根据数值比较大的在上。
+ -->

@@ -1,0 +1,122 @@
+版本控制
+文档留痕
+归属解决问题
+试验分支
+
+
+实用的git命令
+git branch 查看当前分支
+git branch -r列出远程分支
+git branch -a列出所有分支
+
+
+
+git工作流
+
+
+集中分布式工作流适用于从svn迁移过来的项目
+在服务器上创建好中央仓库。
+ssh user@host
+git init --bare /path/to/repo.git（你想存放仓库的位置）
+注意为了表示是一个裸仓库，按照约定加上.git扩展名到仓库名上
+
+所有人克隆中央仓库
+git clone ssh://user@host/path/to/repo.git
+克隆仓库是git会自动添加远程别名origin指向父仓库
+
+git status 查看本地仓库的修改状态
+git add 暂存文件
+git commit  提交文件
+因为这些命令生成的是本地提交。不用担心中央仓库。
+
+完成了功能开发
+git push origin master 
+origin是克隆仓库时git常见的远程中央仓库别名
+master参数告诉git推送的分支。
+
+当另一个同时提交时，push会显示有冲突只能用git pull合并上游的修改到自己的仓库中
+git pull --rebase origin master
+--rebase提示提交移交到了中央仓库修改后的master分支的顶部
+如果你忘记了这个选项，pull操作仍然可以完成，但是每次要同步到中央仓库时，提交历史会以一个多余的合并提交结尾。对于集中式工作流，最好是使用rebase而不是一个合并提价。
+
+rebase操作过程是把本地提交一次一个地迁移到更新了中央仓库master分支上。这意味着可能要解决在迁移某个项目时出现的合并冲突。简化了哪里引入bug的分析。回滚修改也可以做到对项目影响最小。
+
+如果两人和并在有冲突的提示出暂停rebase过程
+conflict merge conflict in <some-file>
+
+解决自己冲突的过程
+git status命令来查哪里有问题。
+修改完毕后
+git add <somee-file>
+git rebase --continue来完成剩下的事
+
+但如果发现搞不定，只要执行下面的命令，就可以回到git pull --rebase命令前的样子
+git rebase --abort
+
+小红完成和中央仓库的同步后，就能成功发布她的修改了
+git push origin master
+
+
+功能分支工作流
+为各个信工分配一个专门的分支来开发。这样就可以吧新功能集成到正式项目。用pull requests的方式讨论变更。
+功能分支工作流背后的核心思路是所有的功能开发应该在一个专门的分支，而不是在master分支。
+功能开发隔离也让pull requests工作流成功可能。在分支合入正式项目之前，给其他开发者有表示赞同的机会。另外如果你在功能开发中有问题卡住了，可以开一个pull requests来向同学们征求建议；。
+
+
+开发者每次在创建一个新分支。功能分支应该有一个描述性的名字。比如aniamted-menu-items 或issue-#1061 这样可以让分支有个清楚且高聚焦的用途。
+
+具体流程
+开发者新建一个独立的分支
+git checkout -b marys=features master
+该命令的意思是检出一个基于master名为mary-feature的分支。git的-b选项表示如果分支还不存在，则新建分支
+然后修改等老套路
+git  status
+git add
+git comit
+
+新功能开发者push功能分支到中央仓库
+git push -u origin marys-feature
+-u选项设置本地分支去跟踪远程对应的分支。设置好跟踪的分支后。系哦啊红就可以使用git push命令省去指定推送分支的参数
+
+完成功能开发，她发起一个pull request让团队的其他人知道功能已经完成。首先确认中央仓库已经有她最近的提交
+git push
+然后在她的git GUI客户端中发起pull request，请求合并
+团队成员会自动收到通知。pull requests很酷的是可以在相关的提交旁边显示注释，所以你可以对某个变更集提问。
+
+最后确定可以接受这个功能
+git checkout master //检测分支是最新的
+git pull
+git pull origin marys-feature //合并
+git push 最后更新的master分支要重新push到origin
+
+
+Gitflow工作流
+通过为功能开发，发布准备和维护分配独立的分支，让发布迭代过程更流畅。严格的分支模型也为大型项目提供了一些非常必要的结构。
+
+
+历史分支
+相对于仅有一个master分支。gitflow工作流使用2个分支来记录项目的历史。master分支存储了正式发布的历史。而develop分支作为功能的集成分支。这样也方便master分支上所有提交分配一个版本号
+
+功能分支使用develop分支作为父分支。当新功能完成后，合并回到develop分支。新功能提交从不与master分支交互
+
+一旦develop分支上有了做一次发布（或者说快到了既定的发布日）的足够功能，就从develop分支上fork一个发布分支。新建的分支用于开始发布循环。从这个时间定开始之后新的功能不能再加到这个分支上。这个分支只应该做bug修复，文档生成和其他面向发布任务。一旦对外发布的工作完成了。。发布分支合并到master分支并分配一个版本号打好tag.另外这些新建分布分支依赖的做的修改哟啊合并回develop分支。
+
+简单来说就是本地创建一个空的develop分支。push到服务器上
+git branch develop
+git push -u origin develop
+
+这个分支会包含了项目的全部历史。其他开发者应该克隆中央仓库。建立好develop分支的跟踪分支。
+git  clone ssh://user@host/path/to/repo.git
+git checkout -b develop origin/develop
+
+git checkout -b some-feature develop
+
+git status 
+git add
+git commit
+
+git pull orggin develop
+git  checkout develop
+git merge some-feature
+git push 
+git branch -d some-feature

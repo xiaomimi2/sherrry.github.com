@@ -1,0 +1,200 @@
+document.documentElement 代表根节点html
+document.body  body节点
+
+IE的兼容性问题
+1.IE（quick mode）怪异模型没有将hmtl放在盒子模型内。无法取得document.documentELement
+2.scrollWidth,offsetWidth,clientWidth.
+  offsetWidth可以包括滚动条的尺寸。
+  一般scrollWidth > offsetWidth > clientWidth
+因为一般不会给html元素设置边框。所以offsetWidth = clientWidth
+3.在基于webkit的浏览器上document.documentElement.scrollWidth返回的是整个文档的宽度。在opera和ff下就是标准body的scrollWidth
+4.IE9包含window.innerWidth属性。IE8不包括。
+
+
+document.documentElement.clientHeight || document.body.clientHeight
+jQuery.css是最终针对css处理的接口。
+
+display:none 相当于设置 position:absolute;visibility:hidden;jquery然后才能取得尺寸。
+
+
+
+
+jQuery.ajax 做的那些事
+1.全局document上都能捕捉到ajax的每一步的回调通知。ajaxStart(),ajaxStop(),ajaxComplete().ajaxError(),ajaxSuccess(),ajaxSend()等-----------------------------------  全局的自定义事件回调
+2.done,fail.when,alaways等-----------------------------  基于deferred方式的done回调
+3.内部调用beforeSend,error,dataFilter,sucesss,complete。---ajax参数回调。
+
+回调触发顺序
+局部beforeSend fail always 局部complete 
+局部beforeSend success always 局部complete
+
+设计一 把回调通过实参传递
+tAjax = function(config){}
+<script>
+	var tAjax = funciton(config){
+		var url = config.url;
+		var complete = config.complete;
+		var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject("Microsoft.XMLHTTP");
+		xhr.open('post',url);
+		xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+		xhr.onreadystatechange = function(){
+			if(xhr.readyState ==4){
+				if(xhr.status === 200){
+					complete(xhr.responseText);
+				}
+			}
+		}
+		xhr.send();
+	}
+</script>
+
+设计二 deferred.done
+<script>
+	var tAjax = function(config){
+		var doneFn;
+		var url = config.url;
+		var complete = config.complete;
+		var xhr = window.XMLHttpRequest? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+		xhr.open("post",url);
+		xhr.setRequestHeader("Content-Type":"application/x-www-form-urlencoded");
+		xhr.onreadystatechange = function(){
+			if(xhr.readyState === 4){
+				if(xhr.status === 200){
+					doneFn(xhr.responseText);
+					complete(xhr.responseText);
+				}
+			}
+		}
+		xhr.send();
+		return {
+			done: function(ourfn) {
+				doneFn = ourfn
+			}
+		}
+	}
+</script>
+
+方式三
+jquery利用了trigger自定义事件触发的
+globalEventContext.trigger("ajaxComplete",[jqXHR,s]);
+
+开发过程中可能遇到的问题
+1.跨域
+2.json格式
+3.dataType
+4.ajax乱码的问题
+5.页面缓存
+6.状态的跟踪
+7.不同平台的兼容
+
+jquery 1.5开始对ajax模块进行了重写。增加了几个新的概念。ajax模块提供了三个新的方法用于管理。扩展ajax请求
+前置过滤器 jQuery.ajaxprefilter
+请求分发器 jQuery.ajaxTransport
+类型转换器 ajaxConvert
+
+$.when方法会等待所有的ajax都完成然后通过then.fail注册的回调函数
+
+
+ajax的deferred的实现
+<script>
+	deferrd = $.deferred();
+	completeDeferred = jQuery.callbacks("once memory")
+	ajax = function(url,options){
+		var jqXHR = {};
+		deferred = jQuery.Deferred();
+		deferred.promise(jqXHR).complete = completeDeferred.add;//这是回调函数的add方法。
+		return jqXHR;
+	}
+</script>
+
+为了向后兼容XMLHttpRequest，jqXHR对象将公开下列属性和方法
+readyState
+status
+statusText
+responseXML responseText
+setRequestHeader(name,value)
+getAllResponseHeaders()
+getResponseHeader()
+abort()
+为了实现上述功能。jQuery对jqXHR做了2个处理。异步队列的deferred.回调队列的callbacks
+
+上式返回的jqXHR实际是promise对象。添加对象的success和error方法和done,fail方法分别相同
+jqXHR.success = jqXHR.done
+jqXHR.error = jqXHR.fail
+
+同时把用户自定义的回调给注册到jqXHR对象上
+<script>
+	for(var i in {
+		success: 1,
+		error: 1,
+		complete: 1
+	}){
+		jqXHR[i](s[i])
+	}
+</script>
+最后通过一个for循环吧对应的方法都执行了
+jqXHR.success(s.success)->jqXHR.done->jQuery.callback("once memory")
+jqXHR.error(s.error)->jqXHR.fail->jQuery.callback("once memory")
+jqXHR.complete(s.complete)->jQuery.callback("once memory").add(s.success)
+
+
+<script>
+	function createAjax(options){
+		options = options || {};
+		var s = jQuery.ajaxSetup({},options);
+		var deferred = jQuery.Deferred();
+		var completeDeferred = jQuery.callback("once memory");
+
+		var jqXHR = {};
+		deferred.promise(jqXHR).complete =completeDeferred.add;
+		jqXHR.success = jqXHR.done;
+		jqXHR.error = jqXHR.fail;
+
+		for(i in {
+			success:1,
+			error:1,
+			complete
+		}){
+			jqXHR[i](s(i));//这个奇怪
+		}
+
+		function send(_.complete){
+			var callback;
+			var script = jQuery("<script>").prop({
+				async:true,
+				charset:s.scriptCharset,
+				src:s.url
+			}).on('load error',callback})//这里callback还能这么写。见识了。
+			document.head.appendChild(script[0]);
+			 callback =  function(evt){
+				script.remove();
+				callback = null;
+				if(evt){
+					complete(evt.type === "error"? 404 : 200,evt.type)
+				}
+		}
+
+		function done(status,nativeStatusText,responses,headers){
+			var isSuccess = status >=200 && status < 300 || status === 304;
+			var success = jqXHR.success;
+			var error = jqXHR.error;
+			if(isSuccess){
+				deferred.resolveWith(document,[success,jqXHR]);
+			}else{
+				deferred.rejectWidth(document,[jqXHR,error]);
+			}
+		}
+
+		send({
+			Accept: "text/javascript,application/javascript,application/evmascri"
+		},done)
+	}
+</script>
+
+
+前置过滤器和请求分发器
+类型转换器将服务端响应的responseText或者responseXML转换为请求时指定的dataType。
+jQuery的ajax是合并了jsonp的处理的。
+
+
+

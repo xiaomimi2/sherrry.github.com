@@ -1,0 +1,258 @@
+前端工程
+1.提供开发所需的一整套运行环境
+2.资源管理，包括资源获取，依赖处理，实时更新。按需加载。公共模块管理等
+3.打通研发链路的各个环节。debug,mock,proxy,test,build,deploy等
+
+
+本地开发环境
+app.js
+<script>
+	var http = require("http")
+	var koa = require("koa")
+	var serve = require("koa-static")
+	var app = koa()
+
+	var app = koa()
+	var debug = process.env.NODE_ENV !== "production";
+	//开发环境和生产环境对应不同的目录
+	var viewDir = debug? "src" : "assert"
+
+	//处理静态资源和入口文件
+	app.use(serve(path.resolve(__dirname,viewDir),{
+		maxage:0
+	}))
+
+	app = http.createServer(app.callback());
+	app.listen(3005,function(){
+		console.log("app listen success")
+	})
+
+	//如果只是处理静态资源请求，可以有很多替代方案。如fiddler替换文件。本地起nginx服务器等
+</script>
+
+定制动态请求
+app.js
+<script>
+	var router = require("koa-router")
+	var routes = require("routes")
+	routes(router,app)
+	app.use(router.routes())
+</script>
+
+routes.js
+<script>
+	var proxy = require("koa-proxy")
+	var list = require("./mock/list")
+
+	module.exports = function(router,app){
+		//mock api 可以根据需要任意定制接口的返回
+		router.get("/api/list",function*(){
+			var query = this.qurey || {};
+			var offset = query.offset || 0;
+			var limit = query.limit || 10;
+			var diff = limit - list.length;
+			if(diff <= 0){
+				this.body = {code : 0,data: list.slice(0,limit)}
+			}else{
+				var arr = list.slice(0,list.length);
+				var i = 0;
+				while(diff--) arr.push(arr[i++]);//重复前面的三个加入到数组中。还是保证limit的数量
+				this.body = {code: 0, data: arr};
+			}
+		})
+
+		//proxy.api
+		router.get("/api/foo/bar",proxy({url: "http://foo.bar.com"}))
+	}
+</script>
+
+webpack资源管理
+webpack同时提供了CommonJS,AMD和ES6模块化标准的支持。对于非前三种标准开发的模块，提供了shimming modules的功能
+
+
+这样设置可以直接load npm模块
+webpack.config.js
+<script>
+	resolve:{
+		root:[process.cwd()+'src',process.cwd()+"/node_modules"],
+		alias:{},
+		extensions:['','.js','.scss','.ejs','.png','.jpg']
+	}
+</script>
+
+
+webpack的设计理念是所有资源都是“模块”
+
+对于开发者来说。使用loader很简单。最好先配置号特此昂类型的资源对应的loader.在业务代码直接使用webpack提供的require(source path)接口即可
+注意require还支持在资源path前面指定loader.即require(![loader list]![source path])
+
+
+图片资源的laoder配置
+<script>
+	{
+		test:/\.(jpe?g|png|gif|svg)$/i,
+		loader:{
+			"image?...",
+			'url?limit=10000&name=img/[hash:8].[name].[ext]'
+		}
+	}
+</script>
+上述的意思是图片资源在加载时先压缩。当内容小于10k。会自动转成base64的方式内嵌进去。这样可以减少一个http请求。当图片大于10kb.会在img下产生压缩的图片。命名格式已定义。hash:8的意思是去图片内容hashsum值的前8位，这样做能保证引用的是图片资源的最新修改版本。保证浏览器能够及时更新。
+
+
+资源的编译输出
+webpack三个概念。模块。入口文件。分块（chunk）
+
+entry：入口，可以是一个或者多个资源合并而成。由html通过script标签引入
+chunk: 被entry所依赖的额外的代码块。同样可以包含一个或者多个文件。
+
+<script>
+	entry:{
+		a:'./src/js/a.js'
+	},
+	output:{
+		path:path.resolve(debug?'__build' :'./asserts/'),
+		filename:debug?'[name].js':'js/[chunkhash:8].[name].min.js',
+		chunkFilename:debug?'[chunkhash:8].chunk.js':'js/[chunkhash:8].chunk.min.js',
+		publicPath:debug:'/__build' :''
+	}
+</script>
+output项占位符[id],[chunkhash],[name]等分别代表编译后的模块id,chunk的hashnum值，chunk名等。可以任意组合决定最终输出的资源格式。hashnum的做法。基本弱化了版本号的概念。版本迭代的时候chunk是否跟新取决于chunk内容是否发生变化。
+
+
+处于性能优化的需要。懒加载代码不需要一般不用打包到入口文件里。
+require.ensure()作为代码分割的标识。
+
+webpack将require.ensure()包裹的部分单独打包了。即途中看到的[hash].chunk.js。既解决了异步加载的问题。有保证了加载到的是最新的chunk的内容。
+
+多个入口文件之间可能公用一个模块。可以使用commonsChunkPlugin插件对指定的chunks进行公共模块的提取。
+
+<script>
+	var chunks = Object.keys(entries);
+	plugins:[
+	new CommonChunkPlugin({
+		name:'vendors',
+		chunks: chunks,
+		minChunks:chunks.length //提取所有entry共同依赖的模块。
+	})]
+</script>
+
+
+webpack提供了强大的热更新支持即HMR（hot module replace）
+
+HMR简单说就是webpack启动一个本地的webserver(webpack-dev-server),负责处理由webpack生成的静态资源请求。吧所有资源都储存在内存中。本地没有生成对应的chunk访问时正常的。
+
+webpack-dev-server启动配置完成后用cli启动。然后再页面引入入口文件时添加webpack-dev-server的host即可
+<script src=http://localhost:3005/__build/verdor.js""></script>
+<script src=http://localhost:3005/__build/a.js""></script>
+
+
+可以将webapck开发服务器以中间件的形式集成到local webserver.不需要cli方式启动
+<script>
+	var webpackDevMiddleware = require("koa-webpack-dev-middleware")
+	var webpack = require("webpack")
+	var webpackConf = require("./webpack.config")
+
+	app.use(webpackDevMiddleware(webpack(webpackConf),{
+		contentBase:webpackconf.output.path,
+		publicPath:webpackConf.output.publicPath,
+		hot:true,
+		atats:webpackConf.devServer.stats
+	}))
+</script>
+
+启动HMR后。每次保存都会重新编译生成新的chunk。
+
+
+
+公用代码的处理
+开发环境和生产环境引用的路径不同
+webpack提供了htmlwebpackPlugin插件来解决。支持从模板生成html.生成的html里面可以正确解决js大套后之后的路径。文件名问题
+项目模板
+
+
+webpack+react+es6的组合使用
+webpack hello.js hello.bundle.js --module-bind 'css=style-loader!css-loader'
+--watch
+
+webpack hello.js hello.bundle.js --module-bind 'css=style-loader!css-loader'
+--progress
+
+webpack hello.js hello.bundle.js --module-bind 'css=style-loader!css-loader'
+--progress --display-modules
+
+webpack hello.js hello.bundle.js --module-bind 'css=style-loader!css-loader'
+--progress --display-modules --display-reasons
+
+
+打包文件过大的问题
+1、检查生产环境HotModuleRepalcementPlugin,NoerrorsPlugin等插件的问题
+2、提取第三方库
+<script>
+	{
+		entry:{
+			bundle:'app',
+			vendor:['react']
+		},
+		plugins: {
+			new webpack.optimize.CommonsChunkPlugin('vendor','vendor.js')
+		}
+	}
+</script>
+这样每次打包都会多出一个vendor.js文件。
+引用外部文件的方式引入第三方库。
+<script>
+	{
+		externals:{
+			'react':'React'
+		}
+	}
+</script>
+externals对象的key是给require时用的。对象的value表示的是如何在global中访问到该对象。
+
+
+代码压缩
+webpack自带了一个压缩插件UglifyJsPlugin。
+<script>
+	new webpack.optimize.UglifyJsPlugin({
+		compress:{
+			warining:false
+		}
+	})
+</script>
+
+
+设置缓存
+304协商缓存。
+cache-control/expires 本地缓存。
+数据摘要要算法。。。
+
+大公司的静态资源优化方案
+配置超长时间的本地缓存---节省带宽，提高性能
+采用内容摘要作为缓存更新依据
+静态资源cdn部署。优化网络请求
+更新资源发布路径实现非覆盖式发布，平滑升级。
+
+
+webpack插件篇
+autoprefixer
+html-webpack-plugin
+extract-text-webpack-plugin 提取样式插件。说明，将css放到index.html的body上面
+copy-webpack-plugin 拷贝文件和文件夹。
+
+全局挂载插件有
+webpack.ProvidePlugin（webpack内置插件）//当模块使用这些变量的时候。模块会自动加载
+new webpack.ProvidePlugin({
+	$:'jquery',
+	jQuery:'jquery',
+	'window.jquery','jquery'
+})
+webpack.NoErrorsPlugin() 不显示错误插件
+webpack.optimize.DedupePlugin() 查找相等或近似的模块。避免在最终生成的文件中出现重复的模块
+webpack.optimize.UglifyJsPlugin() 丑化混淆js代码而用
+webpack.optimize.CommonsChunkPlugin('common.js') 提供公共代码的插件。
+
+
+npm install --save jquery babel-polyfill
+es2015APIs are available in older browsers.
+

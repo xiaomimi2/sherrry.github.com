@@ -1,0 +1,1401 @@
+一、作用域
+js和传统的编译语言不同，他不是提前编译的。编译结果也不能在分布式系统中进行移植。
+
+引擎+编译器+作用域
+
+引擎 查询LHS查询 RHS查询
+RHS可以理解（receive his source value）取得它的源值   得到一个准确的值
+LHS 赋值操作的目标									  找到一个变量
+
+
+区分LHS和RHS的重要性
+当引擎执行RHS查询不到referenceError
+当引擎执行LHS查询不到会全局中创建一个具有该名称的变量。并返回给引擎。。前提是在非严格模式下。
+所以在严格模式中如果LHS查询失败时，并不会创建一个全局变量。引擎会抛出RHS查询失败的referenceError
+如果RHS查询到一个变量，但是你对这个变量的值进行不合理的操作。比如试图对一个非函数类型的值进行函数调用或者引用null或undefined类型中的属性。就会引发另一种错误类型typeError
+
+ReferenceError和作用域判别失败有关。typeError表示作用域判别成功了。
+
+
+
+
+二、词法作用域
+欺骗词法
+1、eval.能遮蔽外层的作用域。在严格模式中，eval()在运行时有自己的词法作用域。无法修改所在的作用域
+<script>
+	function foo(str){
+		"use strict";
+		eval(str);
+		console.log(a)//a is not defiend
+	}
+	for("var a = 2");
+</script>
+2、js中还有setTimeout,setInterval函数的第一个参数可以是字符串。
+3、new Function()函数的行为也很类似，最后一个参数可以接受字符串代码。并将其转换为冬天生成的函数。
+4、with 关键字 通常被当做重复引用同一个对象中多个属性的快捷方式。
+
+with可以将一个没有或者有多个属性的对象处理为一个完全隔离的词法作用域。因此这个对象的属性也被处理为定义在这个作用域中的词法标识符。
+尽管with而已讲一个对象处理为词法作用域，但是var声明还是被添加到with所处的函数作用域中。
+<script>
+	function foo(obj){
+		a =2;
+	}
+	var o1 = {
+		a: 3
+	}
+	var o2 = {
+		b:3
+	}
+	foo(o1);
+	foo(o2);
+	console.log(o1.a)//2
+	console.log(o2.a)//undefined;
+	console.log(a)//2
+</script>
+with的令人费解的自创作用域模式。
+
+
+性能问题
+javascript引擎会在编译阶段进行功能优化。有些优化依赖于代码的词法的静态分析。eval等的出现无法让引擎假设关于标识符的位置。就没法进行优化。这样引擎就会运行的更慢
+
+
+
+三、函数作用域和块作用域
+包装函数可以将内部的变量和函数定义隐藏起来。外部作用域无法访问包装函数内部的任何内容。
+<script>
+	(function foo(){
+
+	})()//
+</script>foo被绑定在函数表达式自身的函数中而不是所在作用域中。
+这样函数会被当做一个函数表达式而不是函数声明来处理。
+函数声明和函数表达式的最重要的区别是他们的名称标识符会出现在声明中的什么地方。
+
+行内表达式在匿名和具名之间的区别不会对他有影响。给函数表达式指定一个函数名
+<script>
+	setTimeout(function timeoutHandler(){
+		console.log()
+	},1000)
+</script>
+
+
+立即执行的函数表达式
+由于函数被包括在一对括号内，就变成了一个表达式。再在末尾加一个括号，就可以立即执行这个函数。
+
+
+改进的另一种格式.和括号在外面的功能是一致的。
+<script>
+	(function(){
+
+	}())
+</script>
+
+
+<script>
+	var a = 4;
+	(function LIFE(){
+		var a = 3;
+		console.log(a);//3
+		console.log(global.a)//4
+	})(window)
+</script>
+
+
+life的用途还有就是倒置代码的执行顺序，在UMD项目中被广泛使用
+<script>
+	var a = 2;
+	(function LIFE(def){
+		def(window)//将window传入当做global参数
+	})(function def(global){
+		var a =3 ;
+		console.log(a)//3;
+		console.log(global.a) //2
+	})//def函数当做LIFE函数的参数传入。定义在
+</script>
+
+块作用域
+try,catch分句会创建一个块作用域，其中声明的变量,err仅在catch内部有效
+try{
+	undefined
+}catch(err){
+	
+}
+
+
+Let关键字的引入
+let关键字可以将变量绑定在所在的任意作用域中。通常是{...}内部。但是let不会变量提升，必须先声明。
+
+
+另一个块作用域非常有用的原因和闭包及回收内存垃圾的回收机制相关。
+<script>
+	function process(data){
+
+	}
+	//在这个块中定义的内容可以销毁了。
+	{
+		let someReallyBigData = {...};
+		process(someReallyBigData)
+	}
+
+	var btn = document.getElementById('my_btn');
+	btn.addEventListener('click',function click(evt){
+		console.log("button clicked")
+	},false)
+</script>
+
+
+
+let循环.let不仅将i绑定到for循环的块中，事实上他将其重新绑定到了循环的每一个迭代中。确保使用上一个循环迭代结束时的值进行重新赋值。
+<script>
+	for(let i = 0; i < 10; i++){
+		console.log(i);
+	}
+	console.log(i)//referenceError
+</script>
+<script>
+	{
+		let j;
+		for(j = 0; j < 10; j++){
+			let i = j;
+			console.log(i);
+		}
+	}
+</script>
+
+
+
+const常量,同样可以用来创建块作用域变量。但其值是固定的（常量）。之后任何试图修改值的操作都会引发错误。
+<script>
+	var foo = true;
+	if(foo){
+		var a = 2 ;
+		const b= 3;
+		b = 4//错误
+	}
+	console.log(a) //2;
+	console.log(b)//referenceError;
+</script>
+
+
+四。提升
+<script>
+	console.log(a);//竟然是undefined,不是2，也不报错。
+	var a = 2;
+</script>
+<script>
+	console.log(a);//referenceError
+	a = 2;
+</script>
+
+
+声明在前还是赋值在前？？？？？？？
+1.函数优先
+函数声明和变量声明都会被提升。但是函数会先被提升
+<script>
+	foo();//1
+	var foo;//这里认为它是重复的声明，会被忽略。
+	function foo(){
+		console.log(1);
+	}
+	foo = function(){
+		console.log(2);
+	}
+</script>
+虽然重复的var声明会被忽略，但是出现在后面的函数还是可以覆盖前面的
+<script>
+	foo();//3
+	function foo(){
+		console.log(1);
+	}
+	function foo(){
+		console.log(2);
+	}
+	function foo(){
+		console.log(3);
+	}
+</script>
+在块内部声明的函数也会变量提升。所以尽量避免。
+
+
+五、作用域闭包
+三种传递给词法作用域外部的闭包的使用方法.共通点就是把闭包传给一个外部词法作用域的变量或函数。
+<script>
+	function foo(){
+		var a = 2;
+		function bar(){
+			console.log(a)//2
+		};
+		return bar;
+	}
+	var baz = bar();
+</script>
+<script>
+	function foo(){
+		var a = 2;
+		function bar(){
+			console.log(a);
+		}
+		baz(bar);
+	}
+
+	function baz(fn){
+		fn();
+	}
+</script>
+<script>
+	var fn;
+	function foo(){
+		var a = 2;
+		function bar(){
+			console.log(a);
+		};
+		fn = bar;
+	};
+	function baz(){
+		fn();
+	}
+</script>
+
+？？？？？奇怪的console.log.针对值类型和引用类型差别很大。
+<script>
+	var a = 2;
+	console.log(a) //2;
+	a = 3;
+
+	var obj = {};
+	console.log(obj);//{name:'wuxiali'}
+	obj.name="wuxiali"
+</script>
+
+针对for循环,使用LIFE在每次迭代的时候创建一个新的作用域。
+<script>
+	for(var i =1; i <= 5; i++){
+		setTimeout(function time(){
+			console.log(i);
+		},i*1000)
+	}//6,6,6,6,6
+	//创建自己的作用域
+	for(var i = 1; i <= 5; i++){
+		(function(j){
+			setTimeout(function time(){
+			console.log(j);
+				},j*1000)
+		})(i)
+	}
+
+	//使用let来劫持块作用域
+	for(var i = 1; i <= 5; i++){
+		let j = i;
+		setTimeout(function time(){
+			console.log(j);
+				},j*1000)
+	}
+
+	for(let i = 1; i <=5; i++){
+		setTimeout(function timer(){
+			console.log(i);
+		},i*1000)
+	}
+</script>
+
+
+模块，利用闭包的强大威力
+1.模块暴露
+<script>
+	function CoolModule(){
+		var something = "cool";
+		var another = [1,2,3];
+		function doSomething(){
+			console.log(something)
+		}
+		function doAnother(){
+			console.log(another.join("!"));
+		}
+		return {
+			doSomething: doSomething,
+			doAnother: doAnother
+		}
+	}
+	var foo= coolModule();
+	foo.doSomething()//cool
+	foo.doAnother()//1!2!3
+</script>
+模块模式必须具有的两个必要条件
+1.必须有外部的封装函数。该函数至少被调用一次。
+2.封闭函数必须至少返回一个内部函数。这样内部函数才能在私有作用域中形成闭包。并且可以访问或修改私有的状态 。
+
+上式的CoolModule可以被任意调用n次。以下方式实现单例模式
+<script>
+	var foo = (function CoolModule(){
+		var something = "cool";
+		var another = [1,2,3];
+		function doSomething(){
+			console.log(something)
+		}
+		function doAnother(){
+			console.log(another.join("!"));
+		}
+		return {
+			doSomething: doSomething,
+			doAnother: doAnother
+		}
+	})();
+	foo.doSomething();
+	foo.doAnother();
+</script>
+
+
+现代的模块机制。
+模块模式的两个特点。为函数引入包装函数。并保证它的返回值和模块的API一致。
+<script>
+	var MyModules = (function Manager(){
+		var modules = {};
+		function define(name,deps,impl){
+			for(var i = 0; i < deps.length; i++){
+				deps[i] = module(deps[i])
+			}
+			module[name] = impl.apply(impl,deps)
+		};
+		function get(name){
+			return module[name];
+		};
+		return {
+			define: define,
+			get: get
+		}
+	})
+
+	MyModule.define('bar',[],function(){
+		function hello(who){
+			console.log("let me introduce" + who);
+		}
+		return {
+			hello: hello;
+		}
+	})	
+	MyModue.define('foo',['bar'],function(){
+		var hungry = "hippo";
+		function awesome(bar){
+			console.log(bar.hello(hungry).toUpperCase());
+		}
+		return {
+			awesome: awesome
+		}
+	})
+
+	var bar = MyModule.get('bar');
+	var foo = MyModule.get('foo');
+	bar.hello("ok");
+	foo();
+</script>
+impl返回的都是对象。数组中相当于说是foo这个模块中可能需要的其他模块引入。依赖参数。
+
+
+未来的模块机制
+ES6中为模块增加了一级语法支持。但通过模块系统进行加载时，ES6会将文件当做独立的模块来处理。
+ES6模块没有行内格式。必须被定义在独立的文件中。
+<script>
+	// bar.js
+	function hello(who){
+		console.log("let me introduce "+ who);
+	}
+	export hello;
+	//foo.js
+	import hello from "bar";
+	var hungry = "hipop"
+	function awesome(){
+		console.log(hello(hungry).toUpperCase())
+	}
+	export awesome;
+	//baz.js
+	module foo from "foo";//这里是module
+	module bar from "bar";
+
+	bar.hello("chino");
+	foo.awesome();
+</script>
+import可以将一个模块中的一个或多个API导入到当前作用域中。并分别绑定在一个变量上。
+export会将当前模块的一个标识符（变量，函数）导出为公共的api。
+模块文件中的内容会被当做好像包含在作用域闭包中一样来处理。
+
+
+
+附录A：动态作用域
+<script>
+	function foo(){
+		console.log(a);//2
+	}
+	function bar(){
+		var a = 3;
+		foo();
+	}
+	var a = 2;
+	bar();
+</script>
+根据词法作用域a的结果是2.根据动态作用域a的结果是3.
+
+主要区别：词法作用域是在写代码或者说定义时确定的。而动态作用域是在运行时确定的。this也是。词法作用域关注函数在何处声明。而动态作用域关注函数从何处调用。
+
+
+附录B:块作用域的替代方案
+<script>
+	{
+		let a = 2;
+		console.log(a)
+	}
+	console.log(a)//referenceError
+</script>
+在es6之前的替代方案
+<script>
+	try(throw 2)catch(a){
+		console.log(a)
+	}
+	console.log(a);
+</script>
+从ES6之前的环境向ES6过渡时，使用diamante转换工具对ES6代码进行预处理。生成兼容ES5的代码。
+
+隐式和显示作用域
+let创造的;但是let声明不包含在ES6中。
+<script>
+	let(a = 2){
+		console.log(a)//2
+	}
+	console.log(a);
+</script>
+比较合法的ES6语法
+<script>
+	{
+		let a = 2;
+		console.log(a)//2
+	}
+</script>
+
+
+附录C this词法
+ES6添加了一个特殊的语法形式用于函数声明。叫做箭头函数。
+<script>
+	var foo = a =>{
+		console.log(a)
+	}
+	foo(2)//2
+</script>
+
+恐怖的this丢失问题
+<script>
+	var obj = {
+		id:'awesome',
+		cool: function coolFn(){
+			console.log(this.id)
+		}
+	}
+	var id = "not awesome";
+	obj.cool();//awesome
+	setTimeout(obj.cool,100);//no awesome
+</script>
+<script>
+	var obj = {
+		id:'awesome',
+		cool: function coolFn(){
+			function ok(){
+				console.log(this.id)
+			};
+			ok();
+		}
+	}
+	var id = "not awesome";
+	obj.cool();//"not awesome"
+</script>
+setTimout中的cool函数丢失了同this之间的绑定。这上面的两个示例都失去了this.只要子obj中由嵌套一层函数形成闭包。this对象就会变成window.
+解决方法：1
+<script>
+	var obj = {
+		count:0,
+		cool: function coolFn(){
+			var self = this;//词法作用域的方法。
+			if(self.count < 1){
+				setTimeout(funciton timer(){
+					self.count++;
+					console.log("awesome?")
+				},100)
+			}
+			console.log(self.id);
+		}
+	}
+	obj.cool();
+</script>
+解决方法2
+箭头函数在涉及this绑定时的行为和普通函数的行为完全不一致。它放弃了所有普通this绑定的规则。取而代之的使用当前的词法作用域覆盖this本来的值。
+<script>
+	var obj = {
+		count:0,
+		cool: function coolFn(){
+			if(this.count < 1){
+				setTimeout(()=>{
+					this.count ++ ;
+					console.log("awesome?");
+				},100)
+			}
+			
+		}
+	}
+</script>
+解决方法 3 bind方法。
+<script>
+	var obj = {
+		count : 1,
+		cool: function coolFn(){
+			if(this.count < 1){
+				setTimeout(function timer(){
+					this.count++;
+					console.log("more awesome")
+				}.bind(this),100)
+			}
+		}
+	}
+	obj.cool();
+</script>
+为什么setTimout会改变this对象？
+setTimeout的this是指向window对象。setTimeout调用的代码与所在函数完全分离的执行环境上。
+
+<script>
+	var obj ={
+		count : 0,
+		getCount: function(){
+			return this.count;
+		}
+	}
+	var obj2 = {
+		count: 1,
+		hello: function hello(){
+			console.log("result"+obj.getCount())
+		}
+	}
+	var count = 2;
+	obj2.hello();//result0
+</script>
+
+
+
+第二部分this和对象原型
+thist提供了一种更加优雅的方式来隐式传递一个对象的引用。这样api可以设计得更加简洁和便于复用。
+<script>
+	function identify(){
+		return this.name.toUpperCase()
+	}
+	function speack(){
+		var greeting = " Hello, I am "+identify.call(me);
+		console.log(greeting)
+	}
+	var me={
+		name: 'kyle'
+	};
+	var you = {
+		name: "reader"
+	}
+
+	identify.call(me);//"kyle"
+	identify.call(you);//"reader"
+	speack.call(me)//“Hello I am KYLE”
+</script>
+
+<script>
+	function foo(){
+		foo.count = 4;
+	}
+	setTimeout(function(){},10)
+</script>
+比较这两个函数。具名函数可以在内部使用foo代表自身。匿名函数没法这样。唯一的方法是用arguments.callee的方法。不过这个方法已经被弃用了。最好不要这么用。
+
+在函数内部的this不是指向函数本身的
+<script>
+	function foo(){
+		this.count++;//其实这里的this指定是window.
+	}
+	foo.count = 0;
+	for(var i=0;i<5;i++){
+		foo()
+	}
+	console.log(foo.count)//0
+</script>
+改进方法
+1.方法一,词法作用域的方法。
+
+<script>
+	function foo(){
+		foo.count++;
+	}
+	foo.count = 0;
+	for(var i=0;i<5;i++){
+		foo()
+	}
+	console.log(foo.count)//5
+</script>
+
+2.方法2，强制指定this指向foo函数对象。
+<script>
+	function foo(){
+		this.count++;
+	}
+	foo.count = 0;
+	for(var i =0;i < 5; i++){
+		foo.call(foo,i);//这里用call方法把this绑定在函数上。
+	}
+	console.log(foo.count);
+</script>
+
+需要注意的是this在任何情况下都不指向函数的词法作用域。每当想要把this和词法作用域的查找混合使用时这是无法实现的。
+<script>
+	function foo(){
+		var a = 3;
+		this.bar();//不可能成功
+	}
+
+	function bar(){
+		console.log(this.a)
+	}
+	foo()//a is not defined.
+</script>
+
+this到底是什么？
+this是运行时进行绑定的。并不是编写时绑定。this的绑定和函数声明的位置没有任何关系。只取决于函数的调用方式。
+当一个函数被调用时，会创建一个活动记录（也称执行上下文）.这个记录会包含函数在那里被调用（调用栈），函数的调用方法，传入的参数等信息。this就是记录的其中一个属性。
+
+this既不是函数本身也不是函数的词法作用域。
+1.调用位置。分析函数调用栈。我们关心的调用位置就在当前的正在执行的函数中的第一个调用。
+
+
+绑定规则
+1.默认绑定
+独立函数调用。
+<script>
+	function foo(){
+		console.log(a)
+	}
+	var a = 2;
+	foo()//2
+
+
+	function foo(){
+		"use strict"
+		console.log(a)
+	}
+	var a = 2;
+	foo()//typeError,this is undefiend
+</script>
+这里foo是直接使用不带任何修饰的函数引用进行调用的。因此只能使用默认绑定。绑定到window.
+如果使用严格模式。那么全局对象将无法使用默认绑定。因此this会绑定到undefined.
+
+2.隐式绑定
+obj.foo 对象内函数调用
+隐式丢失，取决于是否是严格模式。
+<script>
+	function foo(){
+		console.log(this.a)
+	}
+	var obj = {
+		a: 2,
+		foo: foo
+	}
+	var bar = obj.foo;//函数别名。这里bar是一个obj.foo的引用。实际上引用的是foo函数本身。因此bar()应用了默认绑定。
+	var a = "oops,global"
+	bar();
+
+
+	function doFoo(fn){
+		fn();
+	}
+	var obj = {
+		a:2,
+		foo:foo
+	};
+	doFoo(obj.foo);
+
+
+	setTimeout(obj.foo,100)
+</script>
+
+<script>
+	var obj = {
+		a:2,
+		foo: function(){
+			console.log(this.a)
+		}
+	}
+	var bar = obj.foo;
+	var a = "ops , global"
+	bar()//"ops , global"
+</script>
+上述三种方式都会隐式丢失this.这都是赋值或隐式赋值的关系。
+参数传递是一种隐式赋值。
+把函数传入语言内置的函数也是。回调函数传入的时候
+
+总结：发生参数传递就会丢失this,无论是显示还是隐式的。
+回调函数丢失this的绑定是常见的。还有调用回调函数的函数可能会修改this.、、、
+
+3.显式绑定
+call,apply方法的使用。
+<script>
+	function foo(){
+		console.log(this.a)
+	}
+	var obj = {
+		a: 2
+	}
+	foo.call(obj)//2
+</script>
+
+如果你传入了一个值类型来当做this的绑定对象。这个原始值会转成它的对象形式（new String()）,这通常被称作装箱。
+
+但是显示绑定无法解决丢失绑定的问题.解决方法
+3.1.硬绑定.this永远不会变化。
+<script>
+	function foo(somethind){
+		console.log(this.a,something);
+		return this.a+something
+	}
+	function bind(fn,obj){
+		return function(){
+			return fn.apply(obj,arguments);
+		}
+	}
+	var obj = {
+		a: 2
+	};
+	var bar = bind(foo,obj);
+	var b = bar(3)//2 3
+	console.log(b);//5
+</script>
+ES5中提供了内置的方法Function.prototype.bind
+<script>
+	function foo(){
+		console.log(this.a,something);
+		return this.a+something
+	}
+
+	var obj = {
+		a: 2
+	}
+
+	var b = foo.bind(obj);
+	var b = bar(3)//2 3 
+	console.log(b)//5
+</script>
+
+3.2 API调用的上下文
+第三方库的许多函数，都提供了一个可选的参数。通常被称为context(上下文),确保你的回调函数使用指定的this。forEach()第二个参数就是指定的this对象。
+<script>
+	function foo(el){
+		console.log(el,this.id);
+	};
+	var obj = {
+		id:"awesome"
+	};
+	[1,2,3].forEach(foo,obj);
+	//1 awesome 2 awesome 3 awesome
+	
+</script>
+
+
+4.new 绑定
+用new来调用foo()时。创建一个新的对象。这个对象会被执行原型连接。这个新对象会绑定到函数调用的this.如果函数没有返回其他对象。那么new 表达式中的函数会自动返回这个新对象。
+<script>
+	function foo(something){
+		this.a = something
+	}
+	var obj1 = {
+		foo:foo
+	};
+	var obj2 = {};
+	obj1.foo(2)//
+	console.log(obj1.a)//2
+	obj1.foo.call(obj2,3)
+	console.log(obj2.a)//3
+	var bar = new obj1.foo(4);
+	console.log(obj1.a)//2
+	console.log(bar.a)//4
+</script>
+<script>
+	function foo(soemthing){
+		this.a = something
+	}
+	var obj1 = {};
+	var bar = foo.bind(obj1);
+	bar(2);
+	console.log(obj1.a);//2
+	var baz = new bar(3);
+	console.log(obj1.a)//2
+	console.log(baz.a)//3
+</script>
+new参数修改了硬绑定调用bar中的this.得到了一个baz的新对象。
+
+
+判断this
+1.是否在new中调用 this是新创建的对象
+2.call,apply调用 this是指定的对象.api中的context.
+3.函数是否在某个上下文对象中调用。this就是上下文对象。obj.foo()
+4.默认绑定。
+
+
+绑定例外
+如果你把null,undefined作为this的绑定对象传入call,apply,bind。这些值在调用时会被忽略。实际应用的是默认绑定规则
+<script>
+	function foo(){
+		console.log( this.a )
+	}
+	var a = 2;
+	foo.call(null);//2
+</script>
+
+什么情况下传入null?展开数组或者对预设一些参数。
+<script>
+	function foo(a,b){
+		console.log("a:"+ a + ",b: " + b);
+	}
+	foo.apply(null,[2,3])//a:2,b:3
+
+	使用bind()
+	var bar = foo.bind(null,2);
+	bar(3);//a:2,b:3
+</script>
+上述方法吧this绑定到null.默认绑定规则会把this绑定到全局对象。可能会造成不可预计的后果。
+
+
+更安全的this
+不还如一个特殊的对象。把this绑定到这个对象不会对你的程序产生任何副作用。
+object.create(null)和{}很像，但是并不会穿件object.prototype这个委托。比{}更空
+<script>
+	function foo(a,b){
+		console.log("a: "+a + ",b: "+b)
+	}
+	var dmz = Object.create(null);
+	foo.apply(dmz,[2,3])
+</script>
+这样使得函数更加安全。
+
+
+间接引用
+<script>
+	function foo(){
+		console.log(this.a)
+	}
+	var a = 2;
+	var o = { a:3,foo:foo}
+	var p = { a : 4};
+	o.foo()//3
+	(p.foo = a.foo)()//2
+
+</script>
+
+
+软绑定
+如果可以给默认绑定指定一个全局对象和undefined以外的值，那就可以实现和硬绑定相同的效果，同时保留隐式绑定或者显式绑定修改this的能力
+<script>
+	if(!Function.prototype.softBind){
+		Function.prototype.softBind = function(obj){
+			var fn = this;
+			var curried = [].slice.call(arguments,1);
+			var bound = function(){
+				fn.apply((!this || this === (window||global))
+					? obj: this,
+					curried.concat.apply(curried,arguments))
+			}
+			bound.prototype = Object.create(fn.prototype);
+			return bound;
+		}
+	}
+	function foo(){
+		console.log("name: "+this.name)
+	}
+	var obj1 = {name : 'obj1'};
+	var obj2 = {name : 'obj2'};
+	var obj3 = {name : 'obj3'};
+	var fooObj = foo.softBind(obj1);//此处this是window会改成obj1
+	fooObj();
+	obj2.foo = foo.softBind(obj1);//这里的this是obj2对象。
+	obj2.foo();//隐式绑定修改了this。
+	fooObj.call(obj3)//强制绑定obj3
+</script>
+
+<script>
+	function foo(){
+		return (a)=>{
+			console.log(this.a);
+		}
+	}
+	var obj1={a:2};
+	var obj2={a:3};
+	var bar = foo.call(obj1);
+	bar.call(obj2)//2
+</script>
+this词法
+箭头函数不适用this的四条标准规则。而是根据外层的作用域来决定的。
+箭头函数的绑定无法被修改。new也不行。
+直接看词法作用域。
+
+所用总结下来有两种风格的this用法
+1.如果你总是用self=this。可以替代用箭头函数的方法，只要考虑词法作用域。
+2.如果还是用原来的this.考虑改变不同的this可能有的结果。
+
+
+
+对象
+不同的对象在底层都表示为二进制。在javascript中二进制的前三位都是0就会被判断为object。null的二进制表示是全0。所以null在执行typeof时会返回object.
+
+
+内置对象,内置函数
+String,Number,Boolean,Object,Function,Array,Date,RegExp,Error
+属性访问. 这后面跟的必须是一个有效的标识符属性名。
+键访问[]
+对象属性名永远是字符串。用了其它类型也会被转换成字符串。
+
+
+对象复制
+对于JSON安全（也就是说可以背序列化为一个json字符串而且可以根据这个字符串解析出一个结构和值完全一样的对象）的对象来说
+var newObj= JSON.parse(JSON.stringify(someObj));
+
+
+ES6中定义了Object.assign()方法来实现浅复制。Object.assign()方法第一个对象是目标对象。之后可以跟多个源对象
+
+
+属相描述符
+writable,enumberable.configurable,value
+Object.getOwnPropertyDescriptor
+Object.defineProperty
+<script>
+	var myObject = {};
+	Object.defineProperty(myObject,'a',{
+		value:2,
+		writable:true,
+		configurable:true,
+		enumerabel:true
+	})
+</script>
+writable 决定是否可以修改属性的值。
+configurable 只要属性是可配置的，就可以使用defineProperty()方法来修改属性描述符。所以一旦把configurable改为false.就无法再还原了。
+是单向操作。同时如果要删除a这个属性也不可以。
+Enumerable for in循环中是否出现。只有在枚举的情况下失效。如果是 a in myObject，仍然返回true.
+
+
+javascript中通常对象的不变形都是浅不变性。当中如果属性还有引用其他对象，还是可以变得。
+
+对象常量 结合writable:false和configurabel:false 不可修改删除
+禁止对象扩展的方式
+<script>
+	var  myObject={
+		a:2
+	}
+	Object.preventExtensions(myObject);
+	myObject.b = 3;//在严格模式下这个操作会报错
+	myObject.b//undefined
+</script>
+
+密封
+Object.seal()给现有的对象调用object.preventExtensions(),同时设置configurable:false;
+也就是可以更改属性的值。但是不可扩展不可删除。
+
+
+冻结
+Object.freeze()会给对象先运行Object.seal()，再设置writable:false;
+但是注意他会对属性上引用的对象也冰冻。是深复制类型的冰冻。如果是外部引用。要注意不要冻结其他共享对象。
+
+
+[[Get]]
+[[Put]]
+ES5中getter,setter部分改写默认操作，但是只能应用在单个属性上。
+对于访问描述符，javascript会忽略他们的value和writable特性。取而代之关心的是set和get的特性。
+<script>
+	var myObject ={
+		get a(){
+			return 2;
+		}
+	}
+</script>
+由于我们只定义了getter.对a的值进行set的时候回忽略。不会抛出错误。
+<script>
+	var myObject = {
+		get a(){
+			return this._a_
+		},
+		set a(val){
+			this._a_ = val*2
+		}
+	}
+	myObject.a = 2;
+	myObject.a //4
+</script>
+
+存在性问题
+object.a //undefined
+这个undefined是a的属性值还是找不到a这个属性抛出的结果呢？
+a in myObject, myObject.hasOwnProperty("a")
+有一种对象创建是通过Object.create(null)，这就没有连接到Object的原型上。这种时候查找的方法可以是Object.prototyp.getOwnProperty.call(myObject,"a")的方法来实现。
+
+验证属性的可枚举性。
+Object.propertyIsEnumerable()
+Object.keys(),也是包含所有可枚举的属性
+Object.getOwnPropertyNames()返回所有属性，无论是否可枚举。
+
+数组有内置的迭代器。因此for of可以用在数组上。通过调用迭代器对象的next()方法来遍历所有的返回值。
+下面的例子在node中执行。
+<script>
+	var myArray = [1,3,4];
+	var it = myArray[Symbol.iterator]();
+	it.next(); //{value:1,done:false}
+	it.next();//{value:3,done:false}
+	it.next();//{value:4,done:false}
+	it.next();//{value:undefined,done:true}
+</script>
+
+可以给任何想遍历的对象定义@@iterator.for of默认调用next的方法。
+<script>
+	var myObject = {
+		a:2,
+		b:3
+	}
+	Object.defineProperty(myObject,Symbol.iterator,{
+		writeable:false,
+		configurable:true,
+		enumerable:false,
+		value:function(){
+			var o = this;
+			var idx = 0;
+			var ks = Object.keys(o);
+			return{
+				next:function(){
+					return {
+						value:o[ks[idx++]],
+						done:idx>ks.length
+					}
+				}
+			}
+		}
+	})
+</script>
+永远不会结束的迭代器
+<script>
+	var randoms = {
+		[Symbol.iterator]:function(){
+			return {
+				next:function(){
+					return {value:Math.random()}
+				}
+			}
+		}
+	}
+	var random_pool=[];
+	for(var n of randoms){
+		randow_pool.push(n);
+		if(random_pool.length>100) break;
+	}
+</script>
+
+
+混合对象"类"
+面向对象编程。具体介绍面向类的设计模式
+实例化
+继承
+(相对)多态:任何方法都可以引用继承层次中高层中的方法（无论高层的方法名和当前方法名是否相同）
+
+
+在子类（恶如不是他们创建的实例对象）中也可以相对引用它继承的父类。这种相对引用通常被称为super.
+
+显示混入 var key in sourceObject,for(!key in object) 比较父级key和子集key。然后子集不存在的key放入子集
+混合复制 先全部浅复制父级到一个对象。然后再把targetObject覆盖到这个对象上。
+寄生继承 new操作继承父级。然后再通过函数添加修改属性，最后再new一次生成一个最终的对象。
+隐式混入  用到多态的方法。引用了其他对象的方法。利用了this的重新绑定的功能。
+
+原型
+[[prototype]]javascript对象内置属性。其他就是相对于其他对象的引用。
+在原型链上层时myObject.foo="a"会出现三种情况
+1.上层存在foo属性。而且writable没有设置为false,那么会在myObject中添加一个名叫foo的新属性
+2.上层存在foo属性，writable被设置为false.那么无法修改已有属性再myObject上创建屏蔽属性。如果在严格模式下。代码会抛出错误。
+3.如果上层存在foo并且他是一个setter.那就一定会调用这个setter。foo不会被添加到myObject,也不会重新定义foo这个setter.
+
+如果希望在第二种和第三种情况下也屏蔽foo。那就不能使用=操作符来复制。而是使用Object.defineProperty()来向myObject添加foo.
+
+有些情况下会产生隐式屏蔽
+<script>
+	var anotherObject = {
+		a:2
+	}
+	var otherObject = Object.create(anotherObject);
+	anotherObject.a//2
+	otherObject.a//2
+	otherObject.a++;//这是隐式屏蔽
+	anotherObject.a//2
+	otherObject.a//3
+</script>
+
+每个函数都会默认拥有一个名为prototype的共有并且不可枚举的属性。它会指向另一个对象。
+<script>
+	function Foo(){}
+	Foo.prototype
+</script>
+Object.getPrototypeOf()
+
+javascript还在两个对象之间创建一个关联，这样一个对象就可以通过委托访问另一个对象的属性和函数。委托这个属于可以更加准确地描述javascript中对象的关联机制。
+
+差异继承一定程度上可以用来描述javascript的[[prototype]]机制。
+
+Foo.prototype.constructor === Foo//true
+Foo.prototype默认有一个公有并且不可枚举的属性.constructor。这个属性引用的是对象关联的函数。此外调用new Foo()创造的对象也有.construtor属性。执行创建这个对象的函数。
+
+Foo.prototype={
+	constructor:
+}
+Foo.prototype属性的存在。
+
+
+一个标准并且可靠的方法来修改对象的[[prototype]]关联。在ES6之前。我们只能通过设置.__proto__属性来实线。但是兼容性不佳。ES6添加了辅助函数Object.setPrototypeOf()可以用标准并且可靠的方法来修改关联。
+
+<script>
+	Bar.portotype = Object.create(Foo.prototype)//ES5之前要扔掉Bar默认的Bar.prototype
+	Object.setPrototypeOf(Bar.prototype,Foo.prototype)//ES6可以直接修改现有的方法。
+</script>
+
+<script>
+	function Foo(){}
+	Foo.prototype.blash = ;
+	var a = new Foo;
+	a instanceof Foo() //true;
+</script>
+
+如果使用内置的.bind()函数来生成一个硬绑定函数的话。该函数是没有.prototype属性的。在这样的函数上使用instanceof的话，目标函数的.prototype会替代硬绑定函数的.prototype。
+
+用isPrototypeOf的方法可以判断[[prototype]]上的关联关系。
+或者 Object.getPrototypeOf(a) === Foo.prototype
+或者 a.__proto__ === Foo.prototype
+
+<script>
+	//在不支持Object.create()方法的浏览器中可以使用的替代方案
+	if(!Object.create){
+		Object.create = function(o){
+			function F(){};
+			F.prototype = o;
+			return new F();
+		}
+	}
+</script>
+
+行为委托
+把思路从类和继承的设计模式转换到委托行为的设计模式。
+在类设计模式中我们故意让子类和父类都有相同的方法。这样可以利用重写（多态）的优势。在行为委托中恰好相反。我们尽量避免在[[prototype]]链的不同级别中使用相同的命名。这个设计模式要求尽量少使用容易被重写的通用方法名。提倡更具有描述性的方法名。尤其是写清相应对象行为的类型。这样可以创造出更容易理解和维护的代码。
+委托行为意味着某些对象在找不到属性或者方法引用时会把这个请求委托给另一个对象。
+在API接口的设计中。委托最好在内部实现。不要直接暴露出去。
+
+面向对象风格 
+
+<script>
+	function Foo(who){
+		this.me = who;
+	}
+	Foo.prototype.identify = function(){
+		return " I am "+this.me;
+	}
+	function Bar(who){
+		Foo.call(this,who);
+	}
+	Bar.prototype = Object.create(Foo.prototype);
+	Bar.prototype.speak = function(){
+		console.log("hello, "+this.identify()+".")
+	}
+	var b1 = new Bar("b1")
+
+</script>
+对象关联风格
+<script>
+	Foo={
+		init:function(who){
+			this.name = who
+		},
+		identify:function(){
+			return "I am "+this.name;
+		}
+	}
+	Bar = Object.create(Foo);
+	Bar.speack = function(){
+		alert("Hello, "+this.identify()+".")
+	};
+	var b1 = Object.create(Bar);
+	b1.init("b1");
+	b1.speack();
+</script>
+
+三种ui控件类的写法
+
+1.javascript类风格代码
+<script>
+	function Widget(width,height){
+		this.width = width ||50;
+		this.height =height || 50;
+		this.$elm = null;
+	}
+	Widget.prototype.render=function($where){
+		if(this.$elm){
+			this.$elm.css({
+				width:this.width+"px",
+				height:this.height+"px"
+			}).appendTo($where)
+		}
+	}
+	function Button(width,height,label){
+		Widget.call(width,height);
+		this.label = label;
+		this.$elm = $("<button>").text(this.label)
+	}
+	Button.prototype = Object.create(Widget.prototype);
+	Button.prototype.render = function($where){
+		Widget.prototype.render.call(this,$where);
+		this.$elm.click(this.onClick.bind(this))
+	}
+	Button.prototype.onClick = function(){
+		console.log("Button "+ this.label+" clicked!")
+	}
+	$(document).ready(function(){
+		var $body = $(document.body);
+		var b1 = new Button(20,20,"Hello");
+		b1.render($body);
+	})
+	
+
+</script>
+2.事件委托类风格
+<script>
+		var Widget = {
+			init: function(width,height){
+				this.width = width || 50;
+				this.height = height || 50;
+				this.$elem = null
+			},
+			insert:function($where){
+				if(this.$elem){
+					this.$elem.css({
+						width:this.width+"px",
+						height:this.height + "px"
+					}).appendTo($where)
+				}
+			}
+		}
+		var Button = Object.create(Widget);
+		Button.setup = function(width,height,label){
+			this.init(width,height);
+			this.label = label || "default";
+			this.$elem = $("<button>").text(this.label)
+		}
+		Button.build = function($where){
+			this.insert($where);
+			this.$elem.click(this.onClick.bind(this))
+		}
+		Button.Onclick = function(){
+			console.log("Button " + this.label + "clicked!" )
+		}
+
+		var b1 = Object.create(Button);
+		var $body =$("body");
+		b1.setup(125,130,"hello")
+		b1.build($body)
+</script>
+
+
+类实例的自省。主要通过创建方式来判断对象的结构和功能。
+
+"鸭子类型":看起来像鸭子，叫起来像鸭子，那就一定是鸭子。举例来说
+<script>
+	if(a1.something){
+		a1.something();
+	}
+</script>
+ES6的Promise就是典型的鸭子类型。我们判断对象如果有then的方法。ES6的promise就会认为这个对象是可持续的。因此会期望他具有Promise的所有标准行为。这种方法不可靠。
+
+在js中使用的构造函数模拟类的方法中:Foo是构造函数。判断原型关系式。会用到Bar.prototype instanceof Foo 这种让人难以理解的语言。
+
+如果使用对象关联的方式内省.这里我们没有用到instanceof
+<script>
+	var Foo={};
+	var Bar = Object.create(Foo);
+	var b1 = Object.create(Bar);
+	Foo.isPrototypeOf(Bar)//true
+	Object.getPrototypeOf(bar) === Foo//true
+	Foo.isPrototypeOf(b1)//true
+	Bar.isPrototypeOf(b1)//true
+	Object.getPrototypeOf(b1) === Bar;
+</script>
+
+行为委托认为对象之间是兄弟关系。互相委托。而不是父类和子类的关系。
+
+
+ES6中的class
+<script>
+	class Widget{
+		constructor(width,height){
+			this.width = width || 50;
+			this.height = height || 50;
+			this.$elm = null;
+		}
+		render($where){
+			if(this.$elm){
+				this.$elm.css({
+					width:this.width+"px",
+					height:this.height+"px"
+				}).appendTo($where);
+			}
+		}
+	}
+
+	class Button extends Widget{
+		constructor(width,height,label){
+			super(width,height);
+			this.label = label;
+			this.$elm = $("<button>").text(this.label)
+		}
+		render($where){
+			super($where);
+			this.$elm.click(this.onClick.bind(this));
+		}
+		onClick(evt){
+			console.log("Button "+this.label + " clicked!")
+		}
+	}
+</script>
+ES6这种写法解决了什么问题？
+1.不在引用杂乱的.prototype了
+2.Button声明时会直接"继承了"Widget。不在需要通过Object.create()来替换.prototype对象。也不需要设置.__proto__或者Object.setPrototypeOf()
+3.可以通过super()来实现相对多态。这样任何方法都可以引用引用原型链上层的同名方法。
+4.class字面语法不能直接声明属性，只能声明方法。
+5.通过extends很自然的扩展对象子类型。设置内置的对象。
+
+class的陷阱
+1.class基本上只是现有的[[prototype]]机制的一种语法糖。
+2.class没有暴露.prototype。也不包含声明属性的写法。如果用new方法创建，结果无法再共享。都会生成拥有各自属性的实例
+3.class还是面临着意外屏蔽的问题。
+
+
+super的问题。super并不是动态绑定的。而是在声明时“静态绑定”
+<script>
+	class P {
+		foo(){console.log("p.foo")}
+	}
+	class C extends P {
+		foo(){
+			super()
+		}
+	}
+	var c1 = new C();
+	c1.foo()//"p.foo"
+	var D = {
+		foo:function(){console.log("D.foo")}
+	}
+	var E = {
+		foo:C.prototype.foo//原来class类中的方法都是通过C.prototype的形式渠道。这里这里class中的函数foo.
+	}
+	Object.setPrototypeOf(E,D);
+	E.foo();
+</script>
+super在[[HomeObject]].[[Prototype]]上。
+<script>
+	var D={
+		foo:function(){console.log("D.foo")}
+	};
+	var E = Object.create(D);
+	E.foo = C.prototype.foo.toMethod(E,"foo");//这里手动把[[HomeObject]]绑定到E.这个和bind绑定类似。
+	E.foo()//"D.foo" super（）引用的是[[HomeObject]].[[prototype]]
+</script>

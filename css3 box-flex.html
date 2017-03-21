@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>弹性盒子模型demo</title>
+	<style>
+		.test_box{
+			display:box;
+			display:-webkit-box;
+			display:-moz-box;
+			width:150px;
+			height:50px;
+			background-color: #ccc;
+			color:#fff;
+		}
+		.list:nth-child(1){
+			background-color: red;
+		}
+		.list:nth-child(2){
+			background-color: green;
+		}
+		.list:nth-child(3){
+			background-color: black;
+		}
+		.list_one{
+			-moz-box-flex:1;
+			-webkit-box-flex:1;
+			box-flex:1;
+		}
+		.list_two{
+			-moz-box-flex:2;
+			-webkit-box-flex:2;
+			box-flex:2;
+		}
+		.list_w50{
+			width:50px;
+		}
+	</style>
+</head>
+<body>
+	<div class="test_box">
+		<div class="list list_two" >1</div>
+		<div class="list list_one" style="margin:0 10px">2</div>
+		<div class="list list_w50" >3</div>
+	</div>
+	<p>父级爸爸其实非常的厉害。有以下属性。box-orient,box-direction,box-align,box-pack,box-lines</p>
+	<dl>
+		<dt>box-orient用来确定子元素的方向</dt>
+		<dd>
+			<ul>
+				<li>inline-axis是默认值。horizontal和它的表现几乎一致，横排</li>
+				<li>vertical和block-axis几乎一致。竖排</li>
+			</ul>
+		</dd>
+		<dt>box-direction,子元素的排列顺序</dt>
+		<dd>normal,reverse,inherit</dd>
+		<dt>box-align和box-pack都是决定盒子内部剩余空间怎么使用。在行为上表现为对齐。box-align是竖直对齐方式。box-pack是横向对齐方式</dt>
+		<dd>
+			<ul>
+				<li>start</li>
+				<li>center</li>
+				<li>end</li>
+				<li>baseline 字对齐</li>
+				<li>stretch 也就是父标签多高，孩子元素就高</li>
+			</ul>
+			<ul>
+				<li>box-pack  start</li>
+				<li>box-pack  end</li>
+				<li>box-pack  center</li>
+				<li>box-pack  justify</li>
+			</ul>
+		</dd>
+		<dt>box-lines是否换行显示。</dt>
+		<dd>
+			<ul>
+				<li>single 单行显示</li>
+				<li>multiple 允许多行显示</li>
+			</ul>
+		</dd>
+	</dl>
+</body>
+</html>

@@ -1,0 +1,129 @@
+webpack的优势
+1.commonJS的形式书写，支持AMD/CMD
+2.能被模块化的不仅是js
+3.开发便捷，能替代部分grunt/gulp工作。比如打包，压缩混淆，图片转base64等
+4.扩展性强。插件机制完善。特别是支持React热插拔。见react-hot-loader的功能
+
+AMD(异步模块定义)和CMD（通用模块定义）
+区别
+AMD对于依赖的模块，AMD是提前执行。CMD是延迟执行。CMD推崇as lazy as possible
+
+对于AMD/CMD模式。鉴于模块是异步加载的。所以我们常规需要使用define函数
+<script>
+	define(['package/lib'],function(lib){
+		function foo(){
+			lib.log('hello world!');
+		}
+		return {
+			foo:foo
+		}
+	})
+</script>
+为了兼容commonJS的写法。我们可以define这么写
+<script>
+	define(function(require, exports, module){
+		var someModule = require('someModule');
+		var anotherModuel = require('anotherModule');
+		someModule.doTehAwesome()
+		anotherModule.doMoarAwesome();
+		exports.asplode = function(){
+			someModule.doTehAwesome();
+			anotherModule.doMoarAwesome();
+		}
+	})
+</script>
+
+
+对于webpack可以直接写commonJS形式的语法。不需要define
+<script>
+       var someModule = require('someModule');
+	   var anotherModuel = require('anotherModule');
+		someModule.doTehAwesome()
+		anotherModule.doMoarAwesome();
+		exports.asplode = function(){
+			someModule.doTehAwesome();
+			anotherModule.doMoarAwesome();
+		}
+</script>
+
+
+安装 npm install webpack -g
+npm init
+npm install webpack --save-dev
+
+配置
+每个项目下面都必须配置一个webpack.config.js。它的作用如同常规的gulpfile.js/Grungfile.js。就是告诉webpack它需要做什么
+
+<script>
+	var webpack = require('webpack');
+	var commonsPlugin = new webpack.optimize.CommonsChunkPlugin('common.js')//用于提取多个入口文件的公共脚本部分。然后生成一个common.js俩方便多页面进行复用。
+
+	module.export = {
+		plugins : [commonsPlugin],
+		//页面入口文件配置
+		entry : {
+			page1 : './page1',
+			//支持数组形式。
+			page2:["./entry1","./entry2"]
+		},
+		output : {
+			path : 'dist/js/page',
+			filename: '[name].bundle.js'//最后会生成page1.bundle.js和page2.bundle.js
+		},
+		module :{
+			//加载器配置，-loader可以简化不写，loader之间用!来连接。注意所有的加载器都需要npm来加载。并建议查阅他们的readme来看如何使用。
+			loaders :[
+			//css文件使用style-loader和css-loader来处理
+			{ test : /\.css$/, loader: 'style-loader!css-loader'},
+			{ test : /\.js$/, loader: 'jsx-loader?harmony'},
+			{ test : /\.scss$/, loader: 'style!css!sass?sourceMap'},
+			//小于8kb的直接转为base64
+			{ test : /\.(png,jpg)$/}, loader: 'url-loader?limit=8192'
+			]
+		},
+		//其他解决方案配置
+		reslove:{
+			//查找module的话从这里开始查找
+			root: 'E:/github/flux-example.src',//绝对路径
+			//自动扩展文件后缀名，意味着我们require模块可以省略不写后缀名。
+			extensions:['','.js','.json','.scss'],
+			//模块定义别名。方便后续直接引用别名，不用写长地址。
+			alias:{
+				AppStore: 'js/stores/AppStore.js',
+				ActionType: 'js/actions/ActionType.js',
+				AppAction: 'js/actions/AppAction.js'
+			}
+
+		}
+	}
+</script>
+
+
+webpack执行。
+webpack --display-error-details 方便出错时能查阅更详细的信心
+
+webpack --config xxx.js //使用另一份配置文件来打包
+webpack --watch //监听变动并自动打包
+webpack -p //压缩混淆脚本，这个非常非常重要
+webpack -d //生成map映射文件。告知哪些模块被最终打包到哪里了
+
+模块引入
+在html中直接引入最终生成的脚本页面即可。
+我们不需要引入样式。因为脚本执行时会动态生成style并标签打到head里。
+<script src="dist/js/page/common.js"></script>
+
+在js中。
+各个脚本模块可以直接使用commonJS来书写。并可以直接引入未经编译的模块。只要在webpack.config.js里面配置好了对应的加载器。
+<script>
+	require('../../css/reset.css') //加载初始化样式
+	require('../../css/allComponent.scss')//加载组件样式
+
+	var React=require('react')
+</script>
+
+其他
+
+shimming
+在AMD/CMD中。我们需要对不符合规范的模块，比如一些直接返回全局变量的插件进行shim处理。可以通过exports-loader来帮忙
+
+{ test : require.resolve('./src/js/tool/swipe.js'), loader: 'exports?swipe'}

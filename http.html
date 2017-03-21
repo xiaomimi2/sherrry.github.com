@@ -1,0 +1,80 @@
+HTTP超文本传输协议。
+http是一个基于TCP/IP通信协议来传递数据
+
+http协议工作于客户端-服务端架构上。
+http默认端口号是80。
+
+http三个注意事项
+1.每次连接只处理一个请求。
+2.http是媒体独立的
+3.http是无状态的协议。
+
+HTTP使用同一资源标识符（Uniform Resource Identifiers,URI）来传输数据和建立连接。
+一旦建立连接后，数据消息就通过类似Internet邮件所使用的格式【RFC5322】和多用途Internet邮件扩展（MIME）来传送。
+
+客户端请求消息
+请求行 请求方法 空格 URL 空格 协议版本 
+请求头部 头部字段名：值
+空行
+请求数据 请求数据
+
+服务器响应消息
+状态行 200
+消息报头 Date,Content-Type,Content-length
+
+响应正文
+
+GET	
+HEAD 类似于get请求，返回的响应中没有具体的内容。用于获取报头
+POST	
+PUT 从客户端向服务器传送的数据取代指定的文档的内容。
+DELETE 请求服务器删除指定的页面
+CONNECT http/1.1协议中预留给能够将连接改为管道方式的代理服务器。
+OPTIONS 允许客户端查看服务器的性能
+TRACE 回显服务器收到的请求。主要用于测试和诊断。
+
+http响应头信息
+1/Content-Encoding ：文档的编码方法。servlet应该通过查看Accept-Encoding头（即request.getHeader('Accept-Encoding')）检查浏览器是否支持gzip
+2/Content-length。只有当浏览器使用持久HTTP连接时才需要这个数据。可以把输出文档写入ByteArrayOutputStream,完成后查看器大小，然后把值放入Content-Length头，最后发送内容
+3/Date 当前GMT时间。可以用setDateHeader来设置这个头以避免转换时间格式的麻烦。
+4/Expires 应该什么时候认为文档过期。从而不再缓存。
+5/last-modified 文档最后更改时间。 If-Modified-Since请求头提供一个日期。该请求将被设为get。只有改动时间迟于指定时间的文档才会返回。否则返回一个304状态。Last-Modified也可以用setDateHeader的方法来设置
+6/Location 表示用户应该去哪里提取文档。通常通过HttpServletResponse的sendRedirect方法。该方法同时设置状态码为302
+7/Refresh N秒后刷新页面。通过设置html页面的<meta http-equiv="Refresh",CONTENT="5";url="HTTP://localhostL/path">和直接设置refresh头.IE支持。发送204状态可以阻止浏览器继续刷新
+8/server 服务器名称。servlet不设。是web服务器自己设置。
+9/set-cookie 设置和页面相关的cookie.HttpServletResponse提供的专用方法addCookie
+10/wwww-authenticate 在包含401状态行的应答中这个头是必需的。
+
+
+
+HTTP状态码
+200 请求成功
+301 资源被永久转移到其他URL
+404 请求的资源不存在
+500 服务器内部错误。
+
+状态码的第一个十进制数字定义了状态码的类型
+1 信息，服务器收到请求，需要请求者继续执行操作
+2 成功  操作成功处理
+3 重定向，需要进一步的操作完成请求
+4 客户端错误。请求包含语法错误或无法完成请求
+5 服务器错误
+
+100 继续
+101 切换协议。只能切换到更加高级的协议
+200 ok
+201 created 请的资源建立@@
+203 非授权信息。
+204 无内容。
+205 重置内容。用户重置文档试图。清楚浏览器的表单域
+206 部分内容 服务器成功处理了部分GET请求
+302 Found 资源临时被移动。还是可以使用原来的url地址
+303 查看其它地址。
+304 未修改。不会返回任何资源。
+305 使用代理。所请求的资源必须通过代理访问
+400 bad request 语法错误，服务器无法理解
+401 请求要求用户的身份证明
+405 客户端请求中的方法被禁止
+407 请求要求代理的身份认证。
+408 服务器等待超时
+等等

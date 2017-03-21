@@ -1,0 +1,536 @@
+NoSQLL:指的是非关系型数据库。
+特点
+非关系型
+分布式的
+开源的
+水平可扩展的
+基于nosql的数据库的替代方案：只给你所需要的
+
+问题
+高并发的请求
+对海量数据的高效率存储和访问的需求
+在基于web的架构当中，数据库是最难进行横向扩展的。对数据库的高可扩展性和高可用性的需求
+
+对于web2.0网站来说。关系数据库的很多主要特性都往往无用武之地。
+
+nosql的特点
+1.运行在便宜的pc服务器集群上
+2.击碎了性能瓶颈
+可以省去web或者java应用的和数据转换成sql格式的事件。执行速度非常快。
+3 没有过多的操作
+4 可以处理从超大量的数据
+5 它的支持源于社区
+
+
+mongodb
+
+面向集合：每个集合在数据库都有一个唯一的标识名。并且可以包含无限数目的文档。
+
+模式自由 不需要知道它的结构定义
+
+文档型  键值对的集合。键是字符串，值可以是任何类型。包括数组和文档。我们把这个数据格式称作bson.
+
+
+mongodb使用高效的二进制数据存储，包括大型对象如视频等。
+查询监视：一系列的监视工具用于分析数据库操作的性能
+完整的索引支持：包括文档内嵌对象和数据。查询优化器会分析查询表达式。并生成一个高效的查询计划。
+复制及自动故障转移：MongoDB数据库支持服务器之间的数据复制。复制的主要目标是提供冗余以及自动故障转移
+高效的传统存储方式：支持二进制数据及大型对象。如照片和图片
+自动分片以支持云级别的压缩性。自动分片功能支持水平的数据库集群。可动态添加额外的机器。
+
+适用场合
+网站数据
+缓存：信息基础设施的缓存层。在系统重启之后，由mongodb搭建的持久化缓存层可以避免下层的数据源过载
+
+MongoDB的逻辑结构是一种层次结构
+文档，集合，数据库三个部分组成的。逻辑结构是面向用户的。
+
+MongoDB的文档(document) ,相当于关系数据库中的一行记录
+collection相当于关系数据库中的表
+多个collection在逻辑上组织在一起，就是数据库
+一个MOngoDb实例支持多个数据库
+
+MongoDB的默认数据目录是data/db。在mongodb内部，每个数据库都包含一个.ns文件和一些数据文件。
+这些数据文件会随着数据量的增多而变得越来越多。
+
+Mongodb内部有预分配空间的机制。每个预分配的文件都死用0进行填充。mongodb始终保持额外的空间和
+空余的数据文件。从而有效避免了由于数据暴增带来的磁盘压力过大的问题
+
+
+数据文件每新分配一次，它的大小会是上一个数据文件大小的2倍。每个数据文件最大为2g
+
+数据表中的每张表都对应一个命名空间。每个索引也有对应的命名空间。这些命名空间的元数据都集中在*.ns中
+
+
+比如有foo这个数据库
+foo.test
+foo.bar
+foo.baz
+foo.$freelist  这个命名空间用于记录不再使用的盘区（被删除的collection或索引）
+preallocated space 000 预留空间
+
+第四章  快速入门
+默认存储目录 data/db/
+默认端口27017
+默认http端口 28017
+
+
+/Apps/mongo/bin/mongod --dbpath=/data/db
+
+配置文件启动----------------------------
+./mongod -f etc/mongodb.cnf  (这里的-f指向配置文件)
+
+cat /etc/mongodb.cnf
+dbpath = /data/db
+
+后台daemon方式启动 --fork参数必须也启用 -- logpath
+/Apps/mongo/bin/mongod --dbptah=/data/db --logpath=/data/log/r3.log --fork
+
+dbpath
+logpath
+logappend 错误日志采用追加模式，默认是覆写方式
+bing_ip 对外服务的绑定ip。一般设置为空及绑定在本机上所有可用ip上
+port 对外服务的端口，web管理端口在这个port的基础上加1000
+fork 以后台daemon形式运行服务
+journal 开启日志功能。通过保存操作日志来降低单机故障的恢复时间。1.8版本后正式加入
+syncdelay 系统同步刷新磁盘的事件。默认是60s
+directoryperdb 每个db存放在单独的目录中。建议设置该参数。
+maxConns 最大连接数
+repairpath 执行repair时的临时目录。如果没有烤漆journal，异常down机重启后，必须执行repair操作。
+
+执行mongod --help可以看到对大多数参数的解释
+
+mongoDB中没有设置内存大小相关的参数。它使用os mmap机制来缓存数据文件数据。自身目前不提供缓存
+机制。这样好处是代码简单。mmap在数据量不超过内存是效率很高。但是数据量超过系统可用内存后，则写入的可能性
+可能不太稳定。容易出现大起大落。
+
+mongod支持将参数写入一个配置文件文本中。然后通过config 参数来引用此配置文件
+./mongod --config /etc/mongo.cnf
+
+
+停止数据库-----------------------------------
+ctrl+c 以及发送shutdownServer（）指令及发送unix系统中断信号等
+
+unix系统指令
+ps aux|grep mongod
+在找到实例的进城后，可能通过发送kill -2 PID 或者kill -15 PID的方式来停止进程
+
+
+插入数据
+_id key 在mongodb支持的数据库中。_id是其自有产物。
+存储在MongoDB集合中的每个文档都有一个默认的主键_id。这个主键的名称是固定的，他可以是MONGODB支持的任何类型
+默认是objectId.在关系数据库schem设计中，主键大多是数值型的。比如常用的int和long.并且更通常的是主键的取值由
+数据库自增获得。这种主键数值的有序性有时也表明了某种逻辑。反观mongodb再设计之初就定位于分布式存储系统。所以
+它原生不支持自增主键
+db.c1.insert({})
+
+查询记录-----------------------------------
+hasNext()函数
+printjson
+在用mongodb时的js格式需要需要注意。尤其是等号两边必须是空白
+var cursor = db.things.find()
+printjson(cursor[4])
+
+var arr = db.things.find().toArray()
+arr[5]
+
+条件查询
+find()
+findOne()
+.limit
+
+更新
+db.things.update({},{$set:{}})
+
+删除
+db.things.remove({})
+
+
+常用工具集
+bsondump:将bson格式的文件转储成json格式的数据。
+mongo:客户端命令行工具。其实就是一个js解释器。支持js语法
+mongod:数据库服务器。每个实例启动一个进程。可以fork为后台运行
+monogdump/mongorestore:数据库备份与恢复工具
+mongoexport/mongoimport 数据导入导出工具
+mongofiles:GridFS管理工具。可实现二进制文件的存取
+mongos:分片路由，如果使用了sharing 路由，则应用程序连接的是mongos而不是mongod
+mongosniff:这一工具类似于tcpdump,不同的是他只监控mongoDB相关的包请求，并且是以指定
+的可读性的形式输出
+mongostat:实时性性能监控工具
+
+
+
+应用篇————————————————————————————————————————————————————————————————————————————————————
+条件操作符-------------
+<,<=,>,>=
+db.collection.find({"field":{$gt:value}})  field >value
+$lt,$gte,$lte
+
+$all 匹配所有
+这个操作符和SQL语法的in类似。不同的是$all必须满足包含【】内所有的值
+
+db.collections.find({age:{$all:[6,8]})
+
+$exists判断字段是否存在
+db.user.find(age:{$exists:true})
+
+NUll值处理
+db.c2.find({age:{"$in":[null,"$exists":true]}})
+可能没有定义的也没找出来，所以这里和$exists一起用
+
+$mod 取模运算（余数）
+db.student.find({age:{$mod:[6,1]}})
+
+
+$in 包含即要查询的是一系列枚举值范围
+包含其中一个就成
+
+$nin 不包含在内
+
+$size 数组元素的个数
+
+
+$ne 不等于
+
+正则表达式匹配 $not :/^B.*/
+
+$where 查询
+下面的查询方法殊途同归
+db.c1.find({a:{$gt:3}})
+db.c1.find({$where:"this.a>3"})
+db.c1.find("this.a>3")
+f=function(){return this.a>3} db.c1.find(f);
+
+count查询记录条数
+db.users.find().count()
+db.users.find().skip(10).limit(5).count()这里返回的数量依旧是总记录条数而不是5；
+db.users.find().skip(10).limit(5).count(true)返回限制之后的数量（后者count（非0））
+
+skip()限制返回记录的起点。
+
+sort排序
+以年龄升序 db.users.find().sort({age:1})
+降序排列   db.users.find().sort({age:-1})
+
+游标。
+for(var c=db.t2.find();c.hasNext();){
+	printjson(c.next())
+}
+
+db.f3.find().forEach(funciton(u){printjson(u)})
+
+存储过程
+MongoDB的存储过程使用mongodb来写的。存储在db.system.js表中
+db.system.js.save({_id:"addNumbers,value:function(x,y){ return x+y }"})
+
+db.eval()
+
+
+capped collection -----------------------------------------------------------------------
+capped collection 是性能出色的有着固定大小的集合。age-out（老化移出处理），自动维护集合
+对象中的插入顺序。在创建时要预留指定大小。如果空间用完。新添加的对象将会取代集合中最旧的
+对象
+
+功能特点------------------------------------
+可以插入和更新。但更新不能超过collection的大小。否则更新失败，不允许删除。但是可以调用drop()
+删除集合中所有行。但是drop需要显示地重建集合。在32位机上，一个capped collection的最大值约为
+482.5M,64位上只接受系统文件大小的限制
+
+常见用处
+logging
+MongoDB中日志的首选。MOngoDB没有使用日志文件，而是把日志事件存储在数据库中。在一个没有索引
+的capped collection中插入对象的速度与在文件系统中记录日志的速度相当。
+
+cache
+缓存一些对象在数据库中。比如计算出来的统计信息。这样的需要在collection上建立一个索引。
+使用缓存往往是读比写多
+
+auto archiving
+可以利用capped collection的age-out特性，省去了写cron脚本进行人工归档的工作。
+
+推荐写法--------------------------------------------------------
+为了发挥capped collection的最大性能，如果读比写多，最好不要在上面建索引。否则 插入速度
+从log speed 降为 database speed
+
+使用nature ordering可以有效检索最近插入的元素。因为capped collection能够保证自然排序
+就是插入时的顺序。类似于log文件上的tail操作
+
+
+注意事项--------------------------------------------------------
+1、创建时指定存放的最大文档数。但也要指定size.以为先检查size后检查maxRowNumber,可以使用validate看已经使用的空间决定设置的size
+db.createCollection("mycoll",{capped:true,size:100000,max:100})
+db.mycoll.validate()
+2。createCollection可以用来创建一般的collection。还有一个参数"autoIndexID"，值可以是true和
+false来决定是否需要在_id字段上自动创建索引。
+
+GridFS
+GridFS是一种将大型文件存储在MongoDB数据库中的文件规范。所有官方支持的驱动均实现了GridFS规范
+因为MongoDB中的BSON 对象大小是有限制的。所以GridFS规范提供了一种透明的机制。可以将一个大文件分割成多个比较小的文档，特别对于视频和高清图片
+
+GridFS规定了将文件分块的标准。每个文件都将在文件集合对象中保存一个元数据对象。一个或多个chunk块对象可被组合保存在一个chunk块集合中。
+
+
+简单介绍
+GridFS使用两个表来存储数据
+files 包含元数据对象
+chunks 包含其他一些相关信息的二进制块
+为了使多个GridFS命名为一个单一的数据库，文件和块都有一个前缀，默认情况下前缀是fs.所以任何默认的GridFS存储包括命名空间fs.files,fs.chunks。
+存文件
+mongofiles +文件名 看图
+
+
+db.fs.chunks.find()的结果中的字段“n”代表的是chunk的序号，从0开始。
+
+取出文件
+mongofiles get +文件名
+
+索引----------------------------
+db.fs.chunks.ensureIndex({file_id:1,n:1},{unique:true})
+这样一个块就可以利用他的files_id和n的值进行索引。注意GridFS仍然可以用findOne得到第一个块
+
+
+第八章 MapReduce-----------------------------
+统计--------
+
+Map函数调用emit(key,value)遍历collection中所有的记录。将key和value传递给reduce函数进行处理
+Map函数和Reduce函数可以使用javascript来实现。可以使用db.runCommand或mapReduce命令来执行一个
+MapReduce操作
+
+db.runCommand(
+{ mapreduce:<collection>,
+	map:<mapfuncion>,
+	reduce:<reducefunction>,
+	[,qurey:<query filter object>],
+	[,sort:<sorts hte input objects using this key ,useful for optimization,like sorting
+	by emit key for fewer reduces>],
+	[,limit],
+	[,out],
+	[,keeptemp:<true|false>],
+	[,finalize:<finalizefuncion>],
+	[,scope],
+	[,verbose:ture]
+})
+
+mapreduce：要操作的目标集合
+map:映射函数
+reduce:统计函数。reduce函数的任务就是将key-values变成key-value,也就是把values数组变成一个单一的value。
+query:目标记录过滤
+sort:目标记录排序
+limit:限制目标记录数量
+out:统计结果存放集合。不指定则使用临时集合，客户端断开后自动删除
+keeptemp:是否保留临时集合
+finalize：最终处理函数(对reduce返回结果进行最终整理后存入结果集合)
+scope：向map,reduce,finalize导入外部变量
+verbose:显示详细的时间统治信息
+
+
+
+管理篇--------------------------------------------------------------------------
+数据导出mongoexport-------------------------------
+mongoexport -d +db名 -c +collection -o +要导出的文件名（自定义
+）
+
+导出csv格式的文件
+mongoexport -d +db名 -c +collection --csv -f uid,username,age -o user_csv.dat
+
+数据导入------------------------------------------
+1.导入json数据
+mongoimport -d test -c students students.dat
+
+2.导入csv数据
+mongoimport -d test -c students --type csv --headerline --file students_csv.dat
+--type 指明到导入的文件格式
+--headerline 指明不导入第一行，因为第一行是列名
+--file 指明要导入的文件路径
+
+
+十一章 数据备份mongodump----------------------------------------------------------
+可以用mongodump来做mongoDB的库或者几倍的备份,默认是在当前的目录下创建一个dump目录。也可以指定备份存放的目录
+
+mongodump -d test -o my_monogdb_dump
+
+数据恢复-----------------------------------------------------------------------
+mongorestore -d 数据库名  数据库放置地址
+
+
+
+访问控制-------------------------------------------------------------------------
+MongoDB数据库安全方面的考虑
+1.绑定ip内网地址访问MongoDB服务
+2.设置监听端口
+3.使用用户名和口令登录
+
+绑定ip内网地址访问MongoDB服务
+mongod --bind_ip 192.168.1.103
+客户端访问需要制定服务器ip,否则会报错
+mongo 192.168.1.103
+
+
+设置监听端口
+官方默认端口是27017,为了安全起见，这个端口一般都会改变的。
+mongod --bind_ip 192.168.1.103 --port 28018
+客户端访问 mongo 192.168.1.103:28018
+
+
+使用用户名和口令登录
+mongod --auth
+在最初的时候MongoDB都默认有一个admin数据库（默认是空的）
+而admin.system.users中将会保存比在其他数据库中设置的用户权限更大的用户信息。
+
+注意，当admin.system.users中没有添加任何用户时，即使MongoDB启动时添加了--auth参数，此时不进行任何操作仍然可以使用任何操作。知道知道你在admin.system.users中添加了一个用户
+--------建立系统root用户,指定权限用户
+./mongo
+db.createUser({user:"root",pwd:"123",roles:["readWrite","dbAdmin"]})
+
+
+命令行操作---------------------------------------------------------
+1.通过eval参数执行指定语句
+mongo test --eval "printjson(db.t1.count())"
+
+2执行指定文件夹中的内容
+cat t1_count.js
+mongo t1_count.js可以直接执行这个文件里的内容，对于不需要的说明性文字不希望出现
+mongo --quiet t1_count.js
+
+
+进程控制-----------------------------------------------------------------------------
+DBA经常要解决系统的一些查询性问题。此时一般的操作习惯是先看哪些进程。然后再将异常的进程杀掉
+
+db.currentOp()--------
+Opid:进程号
+Op:操作类型
+Ns:命名空间，值操作的是哪个对象
+Query:如果操作类型是查询的话这里会显示
+lockType:锁的类型，值得是读锁还是写锁
+
+
+结束进程----------
+db.killOp(opid)
+注意不啊哟kill内部发起的操作。比如说replica set 发起的sync操作等
+
+
+
+
+性能篇-------------------------------------------------------------------------------
+MongoDB的索引信息被保存在system.indexes中。且默认总是为_id创建索引。可以这样说，索引是凌驾于数据存储系统之上的另一层系统。所以各种结构迥异的存储都有相同或相似的索引实现及使用接口并不足为奇。
+
+
+
+基础索引==============
+在字段age上创建索引
+db.students.ensureIndex({age:1})1(代表升序)，-1(降序)
+db.students.getIndexes()
+
+当系统已经有大量的数据是，创建索引就是一个非常耗时的活。我们可以在后台执行。只需要指定background:true即可
+db.students.ensureIndex({age:1},{background:true})
+
+
+文档索引=============
+索引可以是任何类型的字段，甚至文档
+db.factory.insert({name:'wwi',addr:{city:"beijing",state:"BJ"}})
+db.factory.ensureIndex({addr:1})
+db.factory.find({addr:{city:"Beijing",state:"BJ"}});
+db.factory.find({addr:{state:"BJ",city:"Beijing"}})这个查询不会用到索引。因为查询的顺序跟索引建立的顺序不一样
+
+组合索引=============
+用1还是-1主要是跟排序的时候或者指定范围内查询的时候有关。
+db.factory.ensureIndex({"addr.city":1,"addr.state":1})
+
+以下的语句都用到了索引
+db.factory.find({"addr.city":"Beijing","addr.state":"BJ"});
+db.factory.find({"addr.city":"Beijing"})
+db.factory.find().sort("addr.city":1,"addr.state":1)
+db.factory.find().sort("addr.city":1)
+
+
+唯一索引===========
+db.t4.ensureIndex({firstname:1,lastname:'-1'},{unique:true})
+如果表里有重复值就会报错，建立不了唯一索引
+
+强制使用索引=======
+hint命令可以强制使用某个索引
+db.t5.ensureIndex({name:1,age:1})
+db.t5.find({age:{$lt:30}}).hint({name:1,age:1}).explain()
+看indexBounds
+
+删除索引============
+删除某张表的所有索引
+db.t3.dropIndexes()
+删除某张表的某个索引
+db.t4.dropIndex({firstname:1})
+
+
+
+explain执行计划--------------------------------------------------------------------
+explain命令让我们获知系统如何处理查询请求。利用explain命令我们可以很好的观察系统如何使用索引来加快检索。同事可以针对性优化索引
+
+
+
+优化器---------------------------
+开启profilling功能
+有两种方式可以控制
+1.在启动参数中直接进行设置
+--profile=级别
+2.可在客户端调用
+db.setProfilingLevel(级别)命令来实时配置。profiler信息保存在system.profile中。我们可以通过
+db.getProfillingLevel()来获取当前的profile级别
+profile级别的1,2,3分别代表的意思是
+0--不开启
+1--记录慢命令（默认>100ms）默认修改时通过添加--slowms 启动参数配置。更方便的是通过
+db.setProfilingLevel(level,slowms),db.setProfilingLevel(1,10)
+2--记录所有命令
+
+查询profiling记录
+MongoDB profile记录是直接存在系统db中。记录位置在system.profile。
+db.system.profile.find({millis:{$gt:5}})
+
+
+
+性能优化--------------------------------------------------------------------------------------
+如果nscanned扫描记录数远大于nreturned（返回的记录数的）的话，我们就要考虑通过要加索引来优化记录定位了
+
+reslen如果多大，那么说明我们返回的结果集太大了。这是查看find函数的第二个参数是否只写上了你需要的属性名。
+
+多余创建索引的建议是如果很少读，那么尽量不要添加索引。索引越多，写操作会越慢。如果读量很大，那么创建索引还是比较划算的。
+
+优化方案：
+1.创建索引
+2.限制返回结果条数
+3、只查询使用到的字段。而不查询所有字段
+4.采用cappedn collection
+db.createCollection({"mycroll",{capped:true,size:100000}})
+cappen可以用insert和update操作，不能有delete操作。只能用drop方法删除整个collection
+默认是基于insert的顺序排序呢
+FIFO。如果超过了collection的限定大小，则采用FIFO算法。新纪录将替代最先insert的记录。
+5.采用server slide code execution 可以减少网络通讯的开销
+6.优化方案hint.在某个字段有索引的前提下
+7采用profiling 可能会影响效率，但是不严重。system.profile是一个capped collection.
+
+
+性能监控================================================================
+mongosniff 此工具可以从底层监控到底哪些命令发送给了MongoDB去执行。从中可以进行分析。以root的身份
+
+mongosniff --source NET lo
+
+
+mongostat可以快速查看某组运行的MOngoDB实例的统计信息。
+每一秒更新一次状态值。通过这些参数可以观察到一个整体的性能情况
+
+db.serverStatus()最基础的查看实例运行状态的命令之一
+db.stats()
+
+第三方工具进行监控
+
+
+架构篇----------------------------------------------------------------------------------
+MongoDB高可用分为两种
+Master-slave 主从复制（已不推荐）
+replica sets 复制集
+增加了故障自动切换和自动修复成员节点。各个DB之间数据完全一致。大大降低了维护成本。建议使用replica set ,replica set故障切换完全自动
+
+
+看收藏的网页
+
+
+主从操作日志
+oplog.rs是一个固定长度的capped collection

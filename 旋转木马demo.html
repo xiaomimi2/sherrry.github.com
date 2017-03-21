@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>图片的旋转木马demo</title>
+	<style>
+	/**
+	 * 注意如果perspective改小了可以变成身在圈中的感觉。例如这里的perspective改成300px;
+	 * perspective-origin可以改变观看试图的角度
+	 */
+		.stage{
+			perspective: 800px;
+			width:1000px;
+			margin:100px auto;
+			background-color: #ccc;
+			height:1000px;
+			position: relative;
+			perspective-origin:50% 50%;
+		}
+		.box{
+			transform-style:preserve-3d;
+			height:100%;
+			width:100%;
+			transition:all 0.5s linear;
+			/*transform:rotateY(0deg);*/
+		}
+		.box img{
+			position:absolute;
+			left:50%;
+			top:50%;
+			margin-left:-115px;
+			margin-top:-75px;
+			width:230px;
+			height:150px;
+			opacity:0.8;
+		}
+		img:nth-child(1){
+			transform: rotateY(0deg) translateZ(366px);
+		}
+		img:nth-child(2){
+			transform: rotateY(40deg) translateZ(366px);
+		}
+		img:nth-child(3){
+			transform: rotateY(80deg) translateZ(366px);
+		}
+		img:nth-child(4){
+			transform: rotateY(120deg) translateZ(366px);
+		}
+		img:nth-child(5){
+			transform: rotateY(160deg) translateZ(366px);
+		}
+		img:nth-child(6){
+			transform: rotateY(200deg) translateZ(366px);
+		}
+		img:nth-child(7){
+			transform: rotateY(240deg) translateZ(366px);
+		}
+		img:nth-child(8){
+			transform: rotateY(280deg) translateZ(366px);
+		}
+		img:nth-child(9){
+			transform: rotateY(320deg) translateZ(366px);
+		}
+
+	</style>
+</head>
+<body>
+	<div class="stage">
+		<div class="box">
+			<img src="images/0.jpg" alt="">
+			<img src="images/1.jpg" alt="">
+			<img src="images/10.jpg" alt="">
+			<img src="images/11.jpg" alt="">
+			<img src="images/12.jpg" alt="">
+			<img src="images/13.jpg" alt="">
+			<img src="images/14.jpg" alt="">
+			<img src="images/15.jpg" alt="">
+			<img src="images/16.jpg" alt="">
+		</div>
+	</div>
+	<script>
+		var box = document.querySelector(".box")
+		function rotateDeg(){
+			var deg = 0;
+			return function(){
+				deg += 40;
+				return deg;
+			}
+		}
+		var angle = rotateDeg();
+		document.onclick = function(){
+			// var beforeDeg = window.getComputedStyle(box,null).getPropertyValue("transform")
+			// console.log(beforeDeg)
+			var deg=angle();
+			box.style.transform = "rotateY("+deg+"deg)";
+			console.log(deg);
+		}
+	</script>
+</body>
+</html>s

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>组件</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1,user-scalabel=no"/>
+	<meta name="app-mobile-web-app-capable" content="yes">
+	<meta name="format-detection" content="telephone=no,email=no">
+	<style>
+		*{
+			padding:0;
+			margin:0;
+		}
+		body{
+			font-size:12px;
+			padding:20px;
+		}
+		button{
+			display: block;
+			width:100%;
+			padding:10px;
+			margin:20px 0;
+			background-color: green;
+			border-radius:10px;
+			color:#fff;
+			border:1px solid #eee;
+		}
+		.g-dialog-container{
+			position:fixed;
+			left:0;
+			top:0;
+			width:100%;
+			height:100%;
+			background-color: rgba(0,0,0,0.6);
+			display:-webkit-box;
+			-webkit-box-pack:center;
+			-webkit-box-align:center;
+		}
+		.g-dialog-container .dialog-window{
+			padding:1em;
+			border-radius:10px;
+			background-color: rgba(0,0,0,0.8);
+			transition: all .3s cubic-bezier(0.46, -0.15, 0.48, 1.35);
+			
+		}
+		.g-dialog-container .dialog-window .dialog-header{
+			width:50px;
+			height:50px;
+			margin:0 auto;
+			
+			/*这里为了防止在移动端图片模糊，故意用了大点的图然后通过background-size设为50px来使图片变得清晰*/
+			
+		}
+		.g-dialog-container .dialog-window .dialog-header.ok{
+			background:url(images/ok1.png) no-repeat 0 0;
+			background-size:50px;
+		}
+		.g-dialog-container .dialog-window .dialog-header.warning{
+			background:url(images/warn.png) no-repeat 0 0;
+			background-size:50px;
+		}
+		.g-dialog-container .dialog-window .dialog-header.loading{
+			background:url(images/loading.gif) no-repeat 0 0;
+			background-size:50px;
+		}
+		.g-dialog-container .dialog-window .dialog-content{
+			padding:1em 1em 0;
+			text-align: center;
+			color:#fff;
+			line-height: 180%;
+		}
+		.g-dialog-container .dialog-window .dialog-footer{
+			padding:1em 1em 0;
+			display:-webkit-box;
+			-webkit-justify-content:center;
+			-webkit-align-items:center;
+		}
+		.g-dialog-container .dialog-window .dialog-footer button{
+			-webkit-appearance:normal;
+			background-color: rgba(255,255,255,0.7);
+			padding:0.8em 1.8em;
+			border:none;
+			color:#eee;
+			border-radius:5px;
+			display: inline-block;
+			text-shadow:#666 1px 1px 0;
+			margin:0.3em;
+			width:auto;
+		}
+		.g-dialog-container .dialog-window .dialog-footer button.green{
+			background-color: rgba(2,202,200,0.8)
+		}
+		.g-dialog-container .dialog-window .dialog-footer button.red{
+			background-color: rgba(253,23,50,0.8);
+		}
+	</style>
+</head>
+<body>
+	<!-- <div class="g-dialog-container">
+		<div class="dialog-window">
+			<div class="dialog-header loading"></div>
+			<div class="dialog-content">你是否要清除购物车</div>
+			<div class="dialog-footer">
+				<button class="red">按钮1</button>
+				<button class="green">按钮2</button>
+				<button>按钮 3</button>
+			</div>
+		</div>
+	</div> -->
+	<button id="btn1">没有传递任何参数需要手动关闭</button>
+	<button id="btn2">弹出一个不带任何按钮的警告框。2秒后自动关闭</button>
+	<button id="btn3">弹出一个有确认和取消的成功框，点击按钮后直接关闭</button>
+	<button id="btn4">弹出一个由确认删除的警告框，点击按钮不关闭，需要手动关闭</button>
+	<button id="btn5">弹出一个朵组合的按钮狂。且按钮样式可以定制</button>
+	<button id="btn6">弹出一个确认和删除的框。点击确认后弹出加载框2秒后自动关闭。定删除按钮把上一次框关闭</button>
+	<script src="zepto/zepto.js"></script>
+	<script src="zepto/touch.js"></script>
+	<script src="zepto/dialog.js"></script>
+	<script>
+		var btn1 = document.getElementById('btn1');
+		var btn2 = document.getElementById('btn2');
+		var btn3 = document.getElementById('btn3');
+		var btn4 = document.getElementById('btn4');
+		var btn5 = document.getElementById('btn5');
+		var btn6 = document.getElementById('btn6');
+		var dig;
+		$(btn1).tap(function(){
+			dig = $.dialog();
+		})
+		$(btn2).tap(function(){
+			dig = $.dialog({
+				delay:2000,
+				type:'warning',
+				message:'2秒后关闭'
+			});
+		})
+		$(btn3).tap(function(){
+			dig = $.dialog({
+				type:'ok',
+				message:'点击按钮后关闭',
+				buttons:[
+				{
+					type:"red",
+					text:"确认"
+				},{
+					text:"取消"
+				}]
+			});
+		});
+		$(btn4).tap(function(){
+			dig = $.dialog({
+				type:'warning',
+				message:'我是警告框',
+				buttons:[
+				{
+					type:"red",
+					text:"确认删除",
+					callback:function(){
+						alert("点击我不会关闭");
+						return false;
+					}
+				}
+				]
+			});
+		});
+		$(btn5).tap(function(){
+			dig = $.dialog({
+				type:'loading',
+				message:'多组合按钮,且按钮样式可定义',
+				buttons:[
+				{
+					type:"red",
+					text:"确认",
+					callback:function(){
+						alert("点击我会关闭");
+						
+					}
+				},
+				{
+					type:'green',
+					text:'取消',
+					callback:function(){
+						return false;
+					}
+				},
+
+				{
+					text:'默认',
+					callback:function(){
+						alert("我是默认");
+					}
+				}
+				]
+			});
+		});
+		$(btn6).tap(function(){
+			dig = $.dialog({
+				type:'warning',
+				message:'确认新弹框，取消删除',
+				buttons:[
+				{
+					type:"green",
+					text:"确认",
+					callback:function(){
+						$.dialog({
+							type:'loading',
+							delay:2000
+						});
+						return false;	
+					}
+				},
+				{
+					type:'red',
+					text:'取消',
+					callback:function(){
+						dig.close();
+						return false;
+					}
+				}
+				],
+				effect:true
+			});
+		})
+		// $(btn2).click(function(){
+		// 	dig = new Dialog({
+
+		// 	})
+		// })
+
+		// var dig = new Dialog({
+		// 	width:100,
+		// 	type:'ok',
+			
+		// 	message:"点击按钮直接关闭",
+		// 	buttons:[
+		// 	{
+		// 		type:'green',
+		// 		text:'确认',
+		// 		callback:function(){
+		// 		  alert(1);
+		// 		}
+
+		// 	},
+		// 	{
+		// 		type:'red',
+		// 		text:'删除',
+		// 		callback:function(){
+		// 		  alert(2);
+		// 		}
+		// 	}]
+		// })
+		// console.log(dig);
+	</script>
+</body>
+</html>

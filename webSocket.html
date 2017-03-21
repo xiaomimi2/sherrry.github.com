@@ -1,0 +1,97 @@
+html5 Websocket
+在webSocket API中，浏览器和服务器只要做一个握手东组哟。然后浏览器和服务器就可以形成一条快速通道。两者之间就可以直接数据相互传送
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<p>TCP连接,当你获取WebSocket连接后，你可以通过send()方法来向服务器发送数据。并通过onmessage事件来接受服务器返回的数据。</p>
+	<h3>WebSocket属性</h3>
+	<h4>Socket.readyState</h4>
+	<ul>
+		<li>0 尚未建立</li>
+		<li>1 连接已经建立，可以进行通信</li>
+		<li>2 连接正在关闭</li>
+		<li>3 连接已经关闭或者连接不能打开</li>
+	</ul>
+	<h4>Socket.bufferedAmount</h4>
+	<p>已被send()放入正在队列中等待传输。但是还没有发出的UTF-8文本字节数
+</p>
+     <h4>WebSocket事件</h4>
+     <dl>
+     	<dt>open</dt>
+     	<dd> Socket.onopen  连接建立时触发</dd>
+     	<dt>message </dt>
+     	<dd>Socket.onmessage  客户端接受服务端数据时触发</dd>
+     	<dt>error </dt>
+     	<dd>Socket.onerror  通信发生错误时触发</dd>
+     	<dt>close</dt>
+     	<dd>Socket.onclose  连接关闭时触发</dd>
+     </dl>
+     <h4>WebSocket 方法</h4>
+     <ul>
+     	<li>Socket.send() 使用连接发送数据</li>
+     	<li>Socket.close() 关闭连接</li>
+     </ul>
+     <p>为了建立WebSocket连接，客户端浏览器首先要向服务器发起一个HTTP请求。这个请求和通常的HTTP 请求不同。包含了一些附加头信心。其中"Upgrade WebSocket"表明这是一个申请协议升级的http请求。一旦连接建立会持续存在到客户端或者服务器端的某一方主动的关闭连接。</p>
+     <div id="sse">
+     	<a href="javascript:WebSocketTest()">运行 WebSocket</a>
+     </div>
+</body>
+</html>
+
+
+<script>
+	
+	function WebSocketTest(){
+		if('WebSocket' in window){
+			alert('你的浏览器支持webSocket')
+			var ws=new WebSocket('ws://localhost:9998/echo')
+			ws.onopen=function(){
+				ws.send("发送数据");
+				alert('数据发送中。。。。。')
+			};
+			ws.onmessage=function(evt){
+				var received_msg=evt.data;
+				alert('数据已接受。。。')
+			};
+			ws.onclose=function(){
+				alert('连接已关闭')
+			}
+		}else{
+			alert("你的浏览器不支持WebSocket")
+		}
+	}
+</script>
+
+
+WebSocket的数据传输是frame形式传输的。比如会将一条消息分为几个frame.按照先后顺序传输出去。这样的好处
+1、大数据的传输可以分片传输。不用考虑到数据大小导致的长度标志位不足够的情况
+2.和http的chunk一样，可以边生成数据边传递消息，及提高传输效率
+
+WebSocket和Socket的区别和联系
+Socket其实不是一个协议，它工作在OSI模型会话层，是为了方便大家直接使用更底层的协议（一般是TCP或UDP）而存在的一个抽象层。Socket是对TCP/IP协议的封装。Socket本身不是协议，而是一个调用API
+
+Socket通常也成为套接字。用于描述IP地址和端口，是一个通信链的句柄。网络上的两个程序通过一个双向的通讯连接实现数据的交换。一个Socket由一个ip地址和一个端口号唯一确定。应用程序通常通过套接字向网络发出请求或者应答网络请求。
+
+所以基于WebSocket和Socket都可以开发出IM社交聊天软件类app
+
+
+
+
+
+
+
+        
+   
+   
+        
+
+
+
+
+
+
+

@@ -1,0 +1,60 @@
+async.js中流程 控制有
+series
+waterfall
+parallel
+parallelLimit
+
+series 串行函数按照顺序一次执行。series的第一个参数可以是一个对象也可以是一个数组。
+参数类型不同，影响的是返回数据的格式。
+<script>
+	async.series({
+		one:function(callback){
+		    callback(null,1)
+		},
+		two:function(callback){
+			callback(null,2)
+		}
+	},function(err,results){
+		console.log(results)
+	})//{one:1,two:2}
+</script>
+
+
+waterfall函数，瀑布流
+waterfall也是按照顺序执行，但是waterfall每个函数产生的值，都会传给下一个函数。
+注意waterfall的tasks参数只能是数组类型。当中途有函数出错。将err传给最终的callback。结果被丢弃。后面的函数不再执行。
+<script>
+	async.waterfall([
+		function(callback){
+			callback(null,'one','two')
+		},
+		function(arg1,arg2,callback){
+			callback(null,'three')
+		},
+		function(arg1,callback){
+			callback('null',done)
+		}
+	],function(err,results){
+		console.log(results)//done
+	})
+</script>
+
+parallel(task,[callback])
+是并行执行多个函数。每个都是立即执行。不需要等待其他函数先执行。传给最终callback数组中的数组按照task中声明的顺序。而不是执行完成的顺序。
+task参数可以是数据或者json对象。tasks参数类型不同返回的results格式不同
+<script>
+	async.parallel([
+		function(callback){
+			callback(null,'one')
+		},
+		function(callback){
+			callback(null,'two')
+		}
+	],function(err,results){
+		console.log(results);
+	})
+</script>
+
+
+parallerLimit(tasks,limit,[callback])
+limit参数限制任务只能同时并发一定数量，而不是无限制开发。

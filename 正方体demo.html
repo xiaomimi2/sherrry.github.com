@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>3d正方体</title>
+	<style>
+		.container{
+			width:300px;
+			height:300px;
+			margin:200px auto;
+			position: relative;
+
+		}
+		.stage{
+			width:100%;
+			height:100%;
+			perspective: 600px;
+			
+			
+			/*background-color: #ccc;*/
+			perspective-origin:left;
+			backface-visibility: visible;
+			-webkit-backface-visibility:visible;
+			transform-style:preserve-3d;
+			/*transform:rotateX(20deg) rotateY(30deg);*/
+		}
+		.box{
+			width:300px;
+			height:300px;
+			position: absolute;
+			font-size:200px;
+			line-height: 300px;
+			color:#000;
+			opacity:0.5;
+			text-align: center;
+		}
+		.stage div:nth-child(1){
+			background-color: red;
+			transform:rotateX(90deg) translateZ(150px);
+			opacity:0.7;
+		}
+		.stage div:nth-child(2){
+			background-color: green;
+			transform:rotateY(90deg) translateZ(150px);
+			opacity:0.7;
+		}
+		.stage div:nth-child(3){
+			background-color: blue;
+			transform:rotateX(-90deg) translateZ(150px);
+			opacity:0.7;
+		}
+		.stage div:nth-child(4){
+			background-color: purple;
+			transform:rotateY(-90deg) translateZ(150px);
+			opacity:0.7;
+		}
+		.stage div:nth-child(5){
+			background-color: yellow;
+			transform:translateZ(150px);
+			opacity:0.5;
+			color:#fff;
+		}
+		.stage div:nth-child(6){
+			background-color: orange;
+			transform:translateZ(-150px);
+			opacity:1;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="stage">
+			<div class="box">1</div>
+			<div class="box">2</div>
+			<div class="box">3</div>
+			<div class="box">4</div>
+			<div class="box">5</div>
+			<div class="box">6</div>
+		</div>
+	</div>
+</body>
+</html>

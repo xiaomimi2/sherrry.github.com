@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>canvas</title>
+	<style>
+		canvas{
+			border:1px solid black;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="cav" width="150" height="150">
+		<!-- 不支持canvas的会显示这个内容 -->
+		<img src="images/0.jpg" alt="">
+	</canvas>
+
+
+<script>
+	// var UA = window.navigator.userAgent;
+	// var CLICK = "click";
+	// if(/ipad|iphone|android/.text(UA)){
+	// 	CLICK ="tap";
+	// }
+	// var catoFrame= $('.cato_frame');
+	// var subNav = $(".sub_nav");
+	// catoFrame.style.display ="block";
+	// subNav[CLICK](function(){
+	// 	var _this = $(this);
+	// 	var _id = $(this).data('cata');
+	// 	var _cur = $("#"+_id);
+	// 	_cur.scrollTop(0);//由于图片滚动的原因。
+	// })
+
+
+//移动端图片利用了canvas的特性。因为痛过了硬件加速
+/**
+ * HTMLCanvasElement.toDataURL()方法返回一个包含图片展示的data URI。可以使用type参数其类型。默认是png格式。图片的分辨率是96dpi
+ * canvas.toDateURL(type,encoderOptions)
+ * 默认type是image/png
+ * 在指定图片格式为image/jpeg或image/webp的情况下，可以从0-1中间选择图片的质量。否则会用默认值0.92
+ * [renderCvs description]
+ * @param  {[type]} parent [description]
+ * @param  {[type]} max    [description]
+ * @return {[type]}        [description]
+ */
+var renderCvs = function(parent,max){
+	var lazyloadImage = $(".lazyload",parent);
+	if(lazyloadImage.length<1){
+		return;
+	}
+	var max = max || lazyloadImage.length;
+	for(var i=0;i<max;i++){
+		var imgId = lazyloadImage[i].id;
+		var imageCache = GET(imgId);
+		if(imageCache){
+			lazyloadimage[i].src = imageCache;
+			continue;
+		}
+		var img = new Image();
+		img.index=i;
+		img.id=imgId;
+		img.crossorigin = "anonymous";
+		img.onload = function(){
+			var _this = this;
+			var ZCvs = $("#"+this.id);
+			var domCvs = zCvs[0];
+			domCvs.src = this.src;
+			zCvs.removeClass("lazyload");
+			try{
+				var cvs = document.createElement('canvas');
+				cvs.style.display="none";
+				document.body.appendChild(cvs);
+				var rcvs = cvs.getContext("2d");
+				cvs.width = 140;
+				cvs.height = 108;
+				rcvs.drawImage(this,0,0,140,108);
+				setTimeout(function(){
+					var data = cvs.toDataURL();
+					SET(_this.id,data);
+					document.body.removeChild(cvs);
+				},200)
+
+			}catch(ex){
+
+			}
+		}
+		img.src = lazyloadImage[i].getAttribute("data-src");
+	}
+}
+</script>
+<!-- <img data-src="" alt="">
+localStorage  base64字符串。
+
+canvas的用处
+1.游戏。
+2.图表制作
+3.banner广告。动态的广告效果
+4.模拟器
+5.远程计算机控制。基于web的数据传输。构建一个完美的可视化控制界面
+6.字体设计
+7.图形编辑器
+8.其他可嵌入网站的内容。
+ -->
+
+<script>
+	//检查支持性
+	var canvas = document.getElementById("cav");
+	if(canvas.getContext){
+		var cxt = canvas.getContext('2d');
+		cxt.fillStyle = "rgb(200,0,0)";
+		cxt.fillRect(10,10,55,50);
+		cxt.fillStyle = "rgba(0,200,0,0.5)";
+		cxt.fillRect(30,30,55,50)
+	}
+	//矩形strokeRect,fillRect,clearRect(x,y,width,height)
+	//beginPath(),closePath(),stroke(),fill()
+	//cxt.fill(),cxt.stroke()
+	//arc(x,y,radius,startAngle,endAngle,anticlockwise)//最后一个是方向，x,y是圆心。
+	//arcTo(x1,y1,x2,y2,radius)根据给定的控制定和半径画一段圆弧。再用直线连接两个控制定
+	
+</script>
+</body>
+</html>
