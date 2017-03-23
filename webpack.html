@@ -256,3 +256,265 @@ webpack.optimize.CommonsChunkPlugin('common.js') 提供公共代码的插件。
 npm install --save jquery babel-polyfill
 es2015APIs are available in older browsers.
 
+
+68网上关于webpack的课件******************************************************
+
+webpack --config xxx.js指定配置文件来打包
+webpack --watch 监听模块并且自动打包
+webpack -p 压缩混淆脚本
+webpack -d 生成map隐射文件，告知哪些模块被最终打包到哪里了
+webpack --progress 显示进度条
+webpack --color 添加颜色
+
+webpack-dev-server搭建本地服务器以及浏览器实时刷新
+主要是启动了一个使用express的http的服务器。它的作用主要是用来伺服资源文件。此外这个http服务器和client使用了websocket通讯协议。原始文件作出改动后，web-dev-server会实时编译
+
+注意启动webpack-dev-server后，在目标文件夹中看不到编译后的文件的。实时编译后的文件都保存在了内存中。
+npm install webpack-dev-server -g
+npm install webpack-dev-server --save-dev
+
+--content-base 设定webpack-dev-server的director根目录。不设定是在当前目录下
+--quite 控制台中不输出打包信息 开发中设为false
+--no-info 不显示任何信息
+--colors 对信息进行颜色输出
+--no-colors 
+--compress 开启gzip压缩
+--host hostname/ip
+--port  默认是8080
+--inline webpack-dev-server会在你的webpack.config.js的入口配置文件中再添加一个入口
+--hot 开发热替换
+--open 启动命令，自动打开浏览器
+--history-api-fallback 查看历史url
+
+
+注意！如果output配置了output的publicPath这个路径，在index.html的文件里面应该也做出调整。因为webpack-dev-server的根目录是相对于publicPath这个路径的。
+例如publicPath:'./assert' 在html中，<script src="assert/bundle.js"></script>
+
+webpack两种自动刷新的方式
+iframe mode默认刷新方式。就是在网页中嵌入了一个iframe,将我们的应用注入到这个iframe中，因此每次修改文件后，都是这个iframe进行了reload
+webpack-dev-server --content-base ./dist 直接就可以启动这个模式
+localhost:8080/webpack-dev-server/index.html 这是浏览器浏览路径
+
+
+inline-mode
+这是直接刷新页面的方式。不会在页面增减任何元素或者js插件。直接放在内存中。这种方式相对较快。
+实现方式一
+<script>
+	var webpack = require('webpack');
+	var path = require('path');
+	var webpackDevServer = require('webpack-dev-server');
+	module.exports = {
+		entry:['webpack-dev-server/client?http://localhost:8080','./src/index.js'],
+		output:{
+			path:path.join(__dirname,'dist/'),
+			publicPath:'http://locahost:8080/dist/',
+			filename:'bundle.js'
+		},
+		plugins:[
+			new webpack.HotModuleReplacementPlugin()
+		]
+	}
+</script>
+
+实现方式二，直接在html引入这部分代码,这种方法不好，需要手动处理
+<script src="http://localhost:8080/webpack-dev-server.js"></script>
+
+实现方式三：直接实现一个server.js,启动服务器
+<script>
+	var webpack = require('webpack');
+	var webpackDevMiddleware = require('webpack-dev-middleware');
+	var webpackDevServer = require('webpack-dev-server');
+	var config = require('./webpack.config.js');
+	config.entry.index.unshift('webpack-dev-server/client?http://localhost:9000');
+	config.entry.index.unshift('webpack/hot/only-dev-server');
+	var compiler = webpack(config);
+	var server = new webpackDevServer(compiler,{
+		hot:true,
+		historyApiFallback:false,
+		noInfo:false,
+		stats:{
+			colors:true
+		},
+		//配置跨域参数
+		// proxy:{
+		// 	"*" :'http://localhost:9000'
+		// }
+		proxy:{
+			'index.php':{
+				target:'http:localhost:80/index.php',
+				secure:false
+			}
+		}
+	});
+	server.listen(9000);
+</script>
+
+实现方法四，直接在webpack.config.js上配置
+<script>
+	var webpack = require('webpack');
+	var webpackDevServer = require('webpack-dev-server');
+	var path = require('path')
+	var CURRENT_PATH = path.resolve(__dirname);
+	var ROOT_PATH = path.join(CURRENT_PATH,'../');
+	var MODULE_PATH = path.join(ROOT_PATH,'./node_modules');
+	var BUILD_PATH = path.join(ROOT_PATH,'./dist');//最后输出放置公共资源的目录
+	var commonsPlugin = new webpack.optimize.CommonsChunkPlugin('common.js');
+	module.exports = {
+		entry:['./src/index.js'],
+		output:{
+			path:path.join(__dirname,"dist/"),
+			publicPath:"http://localhost:8088/dist",
+			filename:'bundle.js'
+		},
+		devServer:{
+			historyApiFallback:true,
+			contentBase:'./',
+			quiet:false,
+			noInfo:false,
+			hot:true,
+			inline:true,
+			lazy:false,
+			progress:true,
+			watchOptions:{
+				aggregateTimeout:300
+			},
+			port:'8088'
+		}
+	}
+</script>
+
+然后在命令行执行 webpack-dev-server --hot --inline
+
+
+常用plugins介绍**************************************
+HotModuleReplacementPlugin
+HtmlWebpackPlugin
+ExtractTextPlugin 将css生成文件，而非内联
+报错但不退出 NoErrorsPlugin
+代码丑化 UglifyPlugin.开发过程中不建议打开
+
+CommonsChunkPlugin 公共js提取{
+	name : entry多文件入口的key值对应,
+	filename:输出名字定义,
+	minChunks:同一个模块被minChunks多的页面同时引用才会被提取出来作为commons
+	minSize:控制文件的大小
+}
+项目中可能会使用很多的第三方插件。如果把所有的插件和自己的js文件打包成一个js文件这样网页加载会很慢。在优化方面完全可以把第三方插件缓存。这样吧第三方插件单独打包成一个js包。用commonsChunkPlugin来实现。
+例子：
+npm i moment jquery --save
+<script>
+	var webpack = require('webpack');
+	var webpackDevServer = require('webpack-dev-server');
+	var ExtractTextPlugin = require('extract-text-webpack-plugin')
+	var path = require('path')
+	var CURRENT_PATH = path.resolve(__dirname);
+	var ROOT_PATH = path.join(CURRENT_PATH,'../');
+	var MODULE_PATH = path.join(ROOT_PATH,'./node_modules');
+	var BUILD_PATH = path.join(ROOT_PATH,'./dist');//最后输出放置公共资源的目录
+	var commonsPlugin = new webpack.optimize.CommonsChunkPlugin('common.js');
+	var HtmlWebpackPlugin = require('html-webpack-plugin');
+	var CopyWebpackPlugin = require('copy-webpack-plugin');
+	var 
+	module.exports = {
+		entry:{
+			app:'./src/index.js',
+			vendors:['jquery','moment']
+		},
+		output:{
+			path:path.join(__dirname,"dist/"),
+			publicPath:"http://localhost:8088/dist",
+			filename:'bundle.js'
+		},
+		devServer:{
+			historyApiFallback:true,
+			contentBase:'./',
+			quiet:false,
+			noInfo:false,
+			hot:true,
+			inline:true,
+			lazy:false,
+			progress:true,
+			watchOptions:{
+				aggregateTimeout:300
+			},
+			port:'8088'
+		},
+		module:{
+			loaders:[
+				{
+					test:/\.js$/,
+					exclude:'./node_modules',
+					loader:['babel-loader'],
+					query:{
+						'presets':['es2015']
+					}
+
+				},
+				{
+					test:/\.css$/,
+					loader:ExtractTextPlugin.extract('style-loader','css-loader','postcss-loader'),
+					exclude:'./node_modules'
+				},
+				{
+					test:/\.less$/,
+					loader:ExtractTextPlugin('style-loader','css-loader!autoprefixer?{browsers:["last 2 versions","IE 8","Android 4.0","ios 6"]}!less?strictMath&noIeCompat!postcss'),
+					exclude:'./node_modules'
+				},
+				{
+					test:/\.(png|jpg)$/,
+					loader:"url-loader?limit=40000"
+				}
+				postcss:function(){
+					return [require('postcss-fixes')({preset:"recommended"})]
+				}
+			]
+		}
+		plugins:[
+			new webpack.HotModuleReplacementPlugin(),
+			new webpack.optimize.CommonsChunkPlugin({
+				name:'vendors',
+				filename:'common.bundle.js',
+				minChunks:Infinity
+			}),
+			new webpack.ProvidePlugin({
+				$:'jquery',
+				jQuery:'jquery',
+				'window.jQuery':'jquery'
+			}),
+			new htmlWebpackPlugin({
+				title:'My app',
+				filename:'admin.html',
+				template:'header.html',
+				inject:'body',
+				minify:true,
+				hash:true,
+				cache:false,
+				showErrors:false,
+				xhtml:false//是否自动关闭标签
+			}),
+			new ExtrackTextPlugin('[name].bundle.css',{
+				allChunks :true
+			}),
+			new CopyWebpackPlugin({
+				from :'./src'
+			})
+		],
+		devtool:'source-map'
+	}
+</script>
+<title><%= htmlWebpackPlugin.options.title %></title>
+<script src="dist/common.bundle.js"></script>
+
+index.js
+<script>
+	//没有使用全局挂载，这里需要require一次，但是使用了全局挂载，可以直接调用
+	var $ = require('jquery')
+</script>
+
+ProvidePlugin 调用模块的别名。全局挂载插件
+new webpack.ProvidePlugin({
+	$:'jquery',
+	jQuery:'jquery',
+	'window.jquery','jquery'
+})
+
