@@ -1476,7 +1476,7 @@
 
     /** Used to detect if a method is native. */
     var reIsNative = RegExp('^' +
-      funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
+      funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&') //$&代表的意思是匹配的子串。w3c查询replace
       .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
     );
 
