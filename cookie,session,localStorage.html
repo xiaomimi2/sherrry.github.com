@@ -1,0 +1,49 @@
+1.Cookie功能需要浏览器的支持。如果浏览器不支持Cookie（如大部分手机中的浏览器）或者把cookie禁用
+2 unicode编码:保存中文。中文属于Unicode字符，在内存中占四个字符。而英文属于ASCII字符。内存中占用两个字符。Cookie中使用Unicode字符时需要对Unicode字符进行编码。否则会乱码
+3 BASE64编码，保存二进制图片
+cookie不仅可以使用ASCII字符和Unicode字符，还可以使用二进制数据。例如在cookie中使用数字证书，提供安全度。使用二进制数据也需要进行编码。
+
+Cookie的常用属性
+name string
+value object  如果值为unicode字符，需要为字符编码。如果是二进制数据，需要使用base64编码
+maxAge cookie失效时间，单位是秒。默认0,-1表示删除
+secure boolean 是否使用安全协议https,ssl等，默认是false
+path string  如果设置为‘/sessionWeb’,只有这个路径下的才可以访问该cookie.最后一个字符时'/'。如果设置为"/"，本域名下所有都可以
+domain string  可以访问该cookie的域名。如果设置为google.com所有以google.com为结尾的域名都可以访问该cookie。注意第一个字符必须是.
+version string cookie使用的版本号
+
+注意从客户端读取cookie时，只会提交name和value。
+
+
+path
+path设置为"/session/"
+不能获取"/session/test/a.jsp"的cookie.这个path应该是/session/test/
+
+
+
+session相当于在服务器上建立的一份客户档案。
+session会话是有时间限制的。默认是20分钟。
+
+服务端创建session可以概括为三个步骤
+1.生成全局唯一标识符 sessionid
+2.开辟数据存储空间。一般会在内存中创建相应的数据结构。但是如果断电，所有的会话数据都会丢失。所以也可以写到文件甚至存储到数据库中。
+3.将session的全局唯一标识符发送给客户端。如何发送？
+3.1 cookie发送。服务器只要设置set-cookie就可以将session的标识符发送到客户端。一般包含session信息的cookie会设置有效时间为0
+3.2URL重写.就是在返回请求的页面之前。将页面内的所有url后面全都以get参数的方式加上session标识符（或者加载path,info部分等等）.这样用户怎么点击链接都会带上session标识符。从而实现了会话的保持。这种在cookie禁用的时候比较有效。
+
+localStorage
+localStorage存储在客户端本地的硬件设备中。
+localStorage.setItem(key,value)
+localStorage.getItem(key)
+localStorage.removeItem(key)
+localStorage.clear()清除所有
+
+也可以使用对象的方式
+localStorage.website = "68kejian.com"
+
+前段的sessionStorage。将一部分数据在当前会话中保存下来。刷新页面数据依旧存在。但是当页面关闭后，sessionStorage的数据会被清空。
+
+sessionStrage的应用  按步骤引导用户填写数据
+cookie 第一次登陆
+
+在浏览器端不要存储敏感数据

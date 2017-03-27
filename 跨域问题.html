@@ -1,0 +1,213 @@
+一 同源的定义
+URL的协议，域名，端口相同，表示同源
+同源策略只对网页的html文档做了限制。对加载的其他静态资源仍旧认为是属于同源
+
+script,img,iframe,link等标签可以加载跨域资源。而不受同源限制。但浏览器限制了javascript的权限，只能使其不能读，写加载的内容
+
+http://www.a.com/a.js
+
+http://www.a.com/b.js              true
+http://www.a.com/script/b.js       true
+http://www.a.com:8000/a.js  	   false 不同端口号
+https://www.a.com/a.js             false 不同协议
+http://70.32.92.74/a.js            false  域名对应的ip也不允许
+http://script.a.com/b.js           false 主域名相同，子域名不同（a.com是主域名）
+http://a.com/a.js                  false 同一域名，不同二级域名，不允许，cookie在这种情况下也不允许访问
+http://www.cnblogs.com/a.js        false 不同域名
+
+
+
+跨域的安全限制都死指浏览器端来说。服务器端不存在跨域安全限制。所以可以通过本机服务器端通过类似httpclient方式完成跨域访问的工作。来后在浏览器端用ajax获取本机服务器端跨域访问对应的url来间接完成跨域访问也是可以的
+
+jsonp解决跨域
+jsonp的原理
+script标签不涉及跨域问题。通过script标签动态请求接口，并且接口返回一个可执行的js代码。
+html页面
+<script>
+	function callback(data){ console.log(data) return data};
+</script>
+<script src="callback.js"></script>
+
+
+html页面同级目录下callback.js
+<script>
+	callback("68kejian.com")
+</script>
+
+
+因为服务器的接口可能有很多，所以需要传递参数。所以我们需要动态创建script标签。添加到head标签内.
+jquery中有一个$.getScript的方法。
+
+
+1.首先在客户端声明一个函数jsonpcallback,然后把函数名作为接口参数传递给服务器。服务器街道参数后用这个参数（）将要输出的json内容包括起来。
+2.客户端浏览器解析script标签。并返回执行的javascript文档数据。文档数据作为参数传入到了客户预定以的callback函数中
+3.jsonp是一种脚本注入的方式，行为上有一定的隐患
+
+注意事项，jsonp只能解决get方式的跨域，对于post没有任何的作用
+
+前端代码
+<script>
+	$.getJson("http://www.test.com/json.php&jsonpCallback=?",function(data){
+		console.log(data.result)
+	})
+
+	$.ajax({
+		type:'GET',
+		async:false,
+		//这里是个问号，jQuery自动把?替换为正确的函数名。以执行回调函数。
+		url:"http://www.test.com/json.php&jsonpCallback=?",
+		dataType:'jsonp',
+		success:function(data){
+
+		}
+
+	})
+</script>
+
+服务器端
+一定要callback来进行回调
+php中
+$callback = $_GET('jsonpCallback');
+echo $callback."($result)"
+由于jsonp需要服务器端进行按照一定的规范进行编写。队某个或者小型项目比较实用。
+用express用res.jsonp 默认jsonp callback name 是callback
+http://www.baidu.com/lsit?callback="foo"
+修改方式
+app.set('jsonp callback name','cb')
+http://www.baidu.com/list?cb="foo"
+
+基于script标签动态创建
+script.src = "http://localhost:80/json.php?jsonpCallback=callback"
+执行一次函数，就要script去取一次执行那个函数。
+
+
+方法二 修改document.domain的方法来实现跨域
+document.domain实现就是在压面通过iframe嵌套另一个页面，然后把他们的domain设置为同一个;
+
+浏览器的限制不能用ajax方法去请求不同源中的文档。第二个限制是浏览器中不同域的框架之间是不能通过js进行交互工作的。不同框架之间（父子或同辈）是可以获取到彼此的window对象的。但是却不能使用获取到window对象的属性和方法（html5中的postMessage方法是一个例外）
+<iframe src="http://example.com/b.html"  id ="iframe" frameborder="0"></iframe>
+<script>
+	var iframe = doucment.getElementById("iframe");
+	var wn = iframe.contentWindow//获取iframe的window对象
+	var voc = wn.document //这里获取不到
+</script>
+在这种时候，document.domain就有用场了。
+document.domain是有限制的。只能设置成自身或者更高一级的父域，且主域必须相同
+
+在页面http://www.example.com/a.html
+<script>
+	document.domain = 'example.com'
+</script>
+在页面http://example.com/b.html
+<script>
+	document.domain = "example.com" //这里虽然域名就是这个，但是必须也要显式的设置。
+</script>
+
+如果想要通过ajax获取跨域iframe页面的交互。修改document.domain是不够的。
+通常的做法是设置一个隐藏的iframe来做一个代理。让这个iframe载入一个与目标页面处在相同域的页面。这个页面可以通过ajax方法去获取数据。然后通过修改document.domain 的方法，让我们能够通过js完全控制这个iframe，这样就可以让iframe去发送ajax请求。然后收到的数据我们也能获得了。
+
+
+方法三  window.name 实现跨域
+window.name 是window的一个属性，所有的页面共享这个属性。每个页面都有读写属性。window.name持久存在一个窗口载入过的所有页面中。并不会因新页面而进行重置。
+注意window.name只能是字符串形式,最大能2M或者更大。具体取决于不同的浏览器。
+http://a.com/app.html
+http://a.com/proxy.html
+http://b.com/data.html
+<script>
+	var state = 0;
+	var iframe = document.createElement("iframe");
+	loadfn = function(){
+		if(state == 1){
+			var data = iframe.contentWindow.name;
+			console.log(data);
+		}else if(state === 0){
+			state = 1;
+			iframe.contentWindow.location = "http://a.com/proxy.html";
+		}
+	}
+	iframe.src = "http://b.com/data.html";//这是外域
+	if(iframe.attachEvent){
+		iframe.attachEvent("onload",loadfn)
+	}else{
+		iframe.onload = loadfn;
+	}
+	document.body.append(iframe)
+</script>
+获取数据之后销毁这个iframe,释放内存
+<script>
+	iframe.contentWindow.document.write('');
+	iframe.contentWindow.close();
+	document.body.removeChild(iframe);
+</script>
+
+方法四otherWindow.postMessage(message,targetOrigin,[transfer])
+message数据不管什么数据都可以无需自己序列化
+html5新特征window.postMessage解决跨域（除了IE6,IE7),现在完全可以放心在手机端使用。window.postMessage允许在两个窗口/frames间发送数据信息，基本上它就像跨域的ajax.但不是浏览器和服务器之间的交互。而是两个客户端之间的通信。
+
+
+数据发送者
+<script>
+	var domain = "http://scriptandstyle.com";
+	var myPopup = window.open(domain + "/windowPostMessageListener.html",'myWindow')//myWindow表示新窗口的名称
+	setInterval(function(){
+		var message = "hello ! the time is "+new Date.getTime();
+		console.log("blog.local: sending message: "+message);
+		myPopup.postMessage(message,domain)
+	},6000)
+</script>
+如果使用iframe
+<script>
+	var domain = "http://scriptandstyle.com";
+	var iframe = document.getElementById("myIframe").contentWindow;
+	setInterval(function(){
+		var message = "hello ! the time is "+new Date.getTime();
+		console.log("blog.local: sending message: "+message);
+		iframe.postMessage(message,domain)
+	})
+</script>
+
+数据接收者
+source 消息源，消息的发送窗口
+origin 消息源的URI,用来验证数据源
+data 发送方发送给接收方的数据
+<script>
+	//IE下使用attachEvent
+	window.addEventListener('message',function(event){
+		if(event.orgin != "http.davidwalsh.name") return;
+		console.log("message received: " + event.data,event);
+		event.source.postMessage("holla back youngin",event.origin)
+	})
+</script>
+
+
+方法五
+gulp-connect-proxy 本地代理服务器，只能解决get跨域
+npm i gulp gulp-connect  gulp-connect-proxy --save-dev
+
+
+后台服务器设置代理解决跨域
+了解一下nginx
+
+Nginx可以根据不同的正则匹配，采取不同的转发策略。Nginx对返回结果的结果进行错误页跳转。异常判断
+
+负载均衡
+1.内置策略 轮询，加权轮询,ip,hash
+2.扩展策略 
+
+
+方法六  cors(跨域资源共享) cross-origin resource sharing,需要后端服务器允许跨域。
+IE8+ firefox 3.5+ chrome 3+
+
+IE使用xDomainRequest，其他常用的用XMLHttpRequest2.0的Request属性：
+open(),setResponseHeader,timeout,withCredential,uplaod,send(),abort()
+
+XMLHttpRequest2.0 response属性 status,statusText,getResponseHeader,getAllResponseHeaders(),entity,
+overrideMimeType,responseType,response,responseText,responseXMl
+<script>
+	var xhr = new XMLHttpRequest();
+	xhr.open("GET","http://www.68kejian.com/login.pho",true);
+	xhr.send()
+</script>
+
+CORS请求默认不发送cookie和http认证信息。如果要发送cookie到服务器。一方面要服务器同意，指定Access-Control-Allow-Credntials : true
+另一方面 ajax请求中必须xhr.withCredentials = true
