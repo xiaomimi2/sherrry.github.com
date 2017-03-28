@@ -1,0 +1,42 @@
+选择的自己喜欢的用法记录
+<script>
+		request
+			.post('/api')
+			.send({name:'Manny',color:"red"})
+			.set('Accept','application/json')
+			.end(function(err,res){
+				if(err || !res.ok){
+					alert("error")
+				}else{
+					alert(JSON.stringify(res.body))
+				}
+			})	
+</script>
+
+get方法,这里query里面也可以是一个字符串。我选择使用这个方法
+<script>	
+	request
+		.get('/search')
+		.query({query:'Manny',range:'1.5',order:'desc'})
+		.end(function(err,res){})
+</script>
+
+DELETE,HEAD,PATCH,POST,PUT方法也用。只要改变一下名字。
+
+HEAD 服务器响应时不会返回消息体。
+<script>	
+		request
+			.head('/favicon.ico')
+			.end(function(err,res){})
+</script>
+
+
+superAgent 存在格式化的默认格式，分别是json和form.如果要发送的数据格式是application/x-www-form-urlencoded.只需要设置type("form")。默认的是json
+<script>
+	request.post('/user')
+			.type('form')
+			.send({name:'tiji'})
+			.end(callback)		
+</script>
+type('application/json')
+type('json')。type也就手MIME type name的简写方式。如xml,json,png等
