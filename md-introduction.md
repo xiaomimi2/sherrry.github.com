@@ -104,4 +104,4 @@ $$\sum^{j-1}_{k=0}{\widehat{\gamma}_{kj} z_k}$$
 <i class="icon-weibo"></i>
 
 ### 内容目录
-`[TOC]`
+[TOC]
