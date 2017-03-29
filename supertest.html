@@ -13,12 +13,21 @@
 			})	
 </script>
 
-get方法,这里query里面也可以是一个字符串。我选择使用这个方法
+get方法,这里query里面也可以是一个字符串。我选择使用这个方法。另外也可以对自定义对query进行排序处理用req.sortQuery(fn)的方法，最后会返回正整数，负整数或0
 <script>	
 	request
 		.get('/search')
 		.query({query:'Manny',range:'1.5',order:'desc'})
 		.end(function(err,res){})
+</script>
+<script>
+	request
+		.get('/user')
+		.query("name=tick")
+		.query("search=many")
+		.sortQuery(function(a,b){
+			return a.length-b.length
+		})
 </script>
 
 DELETE,HEAD,PATCH,POST,PUT方法也用。只要改变一下名字。
@@ -40,3 +49,253 @@ superAgent 存在格式化的默认格式，分别是json和form.如果要发送
 </script>
 type('application/json')
 type('json')。type也就手MIME type name的简写方式。如xml,json,png等
+type是注重于发送的数据的格式，结合的是post
+
+
+这下面的都是结合的是get方法
+req.accept('application/json')或者简写形式req.accept('json');
+req.header('Accept',"application")
+这三种方式类似。
+
+
+superagent会自动格式化json和form。如果想自己定义发送格式可以使用.serialize()的方法。
+
+
+<script>
+	request
+		.get()
+		.retry(2)//重连，默认是三次。最大重连次数
+		.end(callback)
+</script>
+
+
+支持对https请求的配置
+.ca() CA认证证书
+.cert() 客户整数链
+.key() 客户私人秘钥
+.pfx() 客户PFX或者PKCS12编码私钥和证书
+<script>
+	var key = fs.readFileSync('key.pem')
+	var cert = fs.readFileSync('cert.pem')
+	request
+		.post('/client-auth')
+		.key(key)
+		.cert(cert)
+		.end(callback)
+
+	var  ca  = fs.readFileSync('ca.cert.pem')
+	request
+		.post("https://localhost/private-ca-server")
+		.ca(ca)
+		.end(callback)
+</script>
+
+
+req.abort() 中断请求
+req.timeout() 设置响应时间。默认单位是ms。如果响应结果不是在规定的超时时间内下载完毕，请求会被中断
+req.timeout中由两个key,deadline和response
+req.timeout(ms) === req.timeout({deadline:ms})
+<script>
+	request
+		.get('/bing-file?network=slow')
+		.timeout({
+			response:5000,//5秒钟的事件让服务器开始响应返回
+			deadline:60000//1分钟的下载文件时间
+		})
+		.end(function(err,res){
+			if(err.timeout){}
+		})
+</script>
+
+
+验证账户
+<script>
+	request
+		.get('http://localhost')
+		.auth('tobi','learnboost')//用户名，密码。在浏览器端和node中都可以
+		.auth("http://tobi:learnboost@localhsot")//只在node中允许
+		.end(callback)
+</script>
+
+
+重定向
+<script>
+	request
+		.get('some.png')
+		.redirects(2)//允许res重定向的次数。默认有5次
+		.end(callback)
+</script>
+
+保存cookie
+在node中superAgent不保存cookie。可以使用.agent的方法来copy一个superAgent来保存cookie
+<script>
+	var agent = request.agent();//在node中需要这样使用。在浏览器端不需要
+	agent
+		.post('/login')
+		.then(()=>{
+			return agent.get('/cookied-page')
+		})
+</script>
+
+管道流输送数据
+<script>
+	const request = require('superagent')
+	const fs = require('fs')
+	const stream = fs.createReadStream('path/to/myjson');
+	const req = request.post('/somewhere')
+	req.type('json')
+	stream.pipe(req)//stream的内容给req,这是异步的。然后是相当于最后发送给服务器的数据吗?
+</script>
+<script>
+	const stream = fs.createWriteStream('path/to/myjson')
+	const req = request.get('/somejosn')
+	req.pipe(stream); //req的内容给stream
+</script>
+
+多媒体类型请求
+.attach(name,[path],[filename]),.field(name:value)/.field(object)
+<script>
+	request
+		.post('/upload')
+		.field('user[name]','TObi')
+		.field('user[email]','tobi@qq.com')
+		.field('friends[]',['loki','jane'])
+		.attach('avatar','path/to/tobi.png','user.png')
+		.attach('img','path/to/loki.png')
+		.attch('file','path/to/jane.png')
+</script>
+
+
+
+
+
+
+Response
+支持application/x-www-form-urlencoded,application/json,multipart/form-data 
+
+res.body是解析好的返回结果.如果返回格式是json就最方便了，res.body就是一个json对象。
+如果res.send是urlencoded的方式。那么res.send({color:['read','blue']})就会被解析成color=red&color=blue。
+
+如果是multipart/form-data方式，那么就取res.files
+
+res.body,res.text,res.header,res.type
+<script>
+	res.header("Content-Type":"text/html;charset=utf8") === res.type('html').charset('utf8')
+</script>
+res.status
+<script>
+	var type = status / 100 | 0;
+
+	// status / class
+	res.status = status;
+	res.statusType = type;
+
+	// basics
+	res.info = 1 == type;
+	res.ok = 2 == type;
+	res.clientError = 4 == type;
+	res.serverError = 5 == type;
+	res.error = 4 == type || 5 == type;
+
+	// sugar
+	res.accepted = 202 == status;
+	res.noContent = 204 == status || 1223 == status;
+	res.badRequest = 400 == status;
+	res.unauthorized = 401 == status;
+	res.notAcceptable = 406 == status;
+	res.notFound = 404 == status;
+	res.forbidden = 403 == status;
+</script>
+
+
+错误处理
+err.status
+err.response
+
+
+事件
+progress事件，针对文件
+<script>
+	request.post(url)
+		.attach('filename',file)
+		.on('progress',event=>{
+			//direction : upload/download
+			//percent 可能没有
+			//total
+			//loaded 已经上传或下载的字节数
+		})
+</script>
+
+
+支持promise和generator
+如果使用了promise，不要使用end()方法。后面可以使用then的方法
+
+
+
+上述的都是superagent。supertest是进一步封装了。
+<script>
+	var request = require('supertest')//里面传一个服务器对象或者是一个函数
+	var express = require('express')
+	var app = express()
+	request(app) 
+</script>
+
+supertest with mocha
+<script>
+	describe('GET /user',function(){
+		it('respond with json',function(done){
+			request(app)
+				.get('/user')
+				.set('Accept','application/json')
+				.expect('Content-Type',/json/)
+				// .expect('200',done)
+				// .expect(200)
+				// .end(function(err,res){
+				// 	if(err) return done(err)
+				// 	done()
+				// 	})
+				.then(response=>{
+					assert(response.body.email,'foo@bar.com')
+				})
+				
+		})
+	})
+</script>
+
+要保存住cookie，在node中。需要中request.agent的方法
+<script>
+	const request = require('supertest')
+	const should = require('should')
+	const express = require('express')
+	const cookieParser = require('cookie-parser');
+
+	describe('request.agent(app)',function(){
+		const  app = express();
+		app.use(cookieParser());
+		app.get('/',function(req,res){
+			res.cookie('cookie','hey');
+			res.send()
+		})
+		app.get('/return',function(req,res){
+			if(req.cookies.cookie) res.send(req.cookies.cookie);
+			res.send()
+		})
+		const agent = request.agent(app);
+		it("should save cookies",function(done){
+			agent
+				.get('/')
+				.expect('set-cookie','cookie=hey;Path=/',done)
+		})
+
+		it('should send cookie',function(done){
+			agent
+				.get('/return')
+				.expect('hey',done)
+		})
+	})
+</script>
+expect(status[,fn])
+expect(status.body[,fn])
+expect(body[,fn])
+expect(field,value[,fn])
+expect(function(res){})
