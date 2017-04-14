@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>a</title>
+</head>
+<body>
+	<p onclick="foo()">a页面</p>
+	<p>chrome浏览器会默认截止window.open的弹出框</p>
+	<script>
+  		var domain ="http://localhost:8000";
+  		// var iframe = document.createElement("iframe")
+  		// iframe.src=domain+"/b.html";
+  		// document.body.append(iframe);
+  		// var iframeWindow = iframe.contentWindow;
+  		// setInterval(function(){
+  		// 	var message = "send to b.html message"+Date.now();
+  		// 	// console.log(iframe);
+  		// 	// console.log(domain);
+  		// 	// console.log(iframeWindow)
+  		// 	iframeWindow.postMessage(message,domain);
+  		// },6000)
+  		// document.body.append(iframe);
+  		window.addEventListener('message',function(event){
+  			console.log("发送成功");
+  		},false)
+  		function foo(){
+  			var mypop=window.open(domain+"/b.html","myWindow");
+	  		setInterval(function(){
+	  			// console.log(mypop);
+	  			var message = "send to by new window "+Date.now();
+	  			mypop.postMessage(message,domain);
+	  		},6000)
+  		}
+  		
+
+	</script>
+</body>
+</html>

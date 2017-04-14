@@ -1,0 +1,12 @@
+两个index分别是开启不同的服务器。表达跨域的需求
+
+http://localhost:8001/a.html
+http://localhsot:8000/b.html
+
+postMessage需要取到window对象。
+
+这里需要解决浏览器window.open的拦截问题。只能通过事件，用户的操作才能操作成功。
+方法
+1.使用a标签代替要弹出的网址
+2.使用form的submit方法
+3.上述方法不适合放入ajax回调函数内。核心是通过用户点击打开页面再重定向。

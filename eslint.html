@@ -1,0 +1,42 @@
+配置eslint的方法
+.eslintrc.js  导出一个包含配置的对象
+.eslintrc.yaml,.eslintrc.yml
+json。并且此文件允许使用js形式的注释
+package.json。在里面创建eslintConfig属性。所有配置都在这个属性中。
+出现的优先级就是按上述的顺序
+
+
+Environments  nodejs,browser,commonjs等
+Globals 执行代码时需要访问的额外全局变量
+Rules  开启某些规则
+
+
+
+配置
+
+指定全局变量
+方法一  /*global var1,var2*/
+<script>
+	{
+		"globals":{
+			"var1":true,
+			"var2":false//false表示变量只读。
+		}
+	}
+</script>
+
+
+
+规则错误等级
+'off'或者0，关闭规则
+'warn'或者1，警告
+'error'或者2,错误。exit code将会是1
+
+
+
+parseOptions参数
+emcaVersion 3,5,6
+
+
+配置具体规则
+必须是本地的npm module

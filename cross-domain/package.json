@@ -1,0 +1,14 @@
+{
+  "name": "cross-domain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "\u001b[A\u001b[B",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "express": "^4.15.2"
+  }
+}

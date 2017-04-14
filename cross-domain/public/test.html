@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>jsonp跨域</title>
+	<script src="jquery.min.js"></script>
+</head>
+<body>
+	<a href="javascript:foo();">这是test页面</a>
+	<p></p>
+	<script>
+	function foo(result){
+		// console.log('getJsonp')我去这里callback后面只能用问号。用了具体的名字就错了
+		$.getJSON('http://localhost:8080/jsonp?callback=?',function test(data){
+			console.log("ok");
+			$("p").text(data.name);
+		})
+		console.log(result);
+	}	
+	</script>
+	<!-- <script src="http://localhost:8080/jsonp?callback=foo"></script> -->
+</body>
+</html>
