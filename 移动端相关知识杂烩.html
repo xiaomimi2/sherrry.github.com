@@ -1,0 +1,125 @@
+1.在定宽度的页面上实行跨浏览器页面
+一、Android自带的浏览器上4.0以下，不支持viewport,width属性
+android的target-densitydpi来达到项目要求
+android里把主流设备的dpi归成四个档次。120dpi,160dpi,240dpi,320dpi
+一般dpi之间的比例是2 : 1.5 : 1 : 0.75来给界面的尺寸定义（1对应的是160px）
+android中的ldpi 240*320
+           mdpi 320*480  
+           hdpi 480*800 
+           xhdpi 720 * 1280 
+           xxhdpi 1080 * 1920 
+3:4:6:8:12
+根据屏幕分辨率计算dpi 
+比如是640*1164
+用勾股定理计算出斜边是1328  1328/4可以算出dpi 320大约  
+
+dp基于屏幕的物理密度
+dp到px这个比例会随着屏幕密度变化，而不是简单的比例关系。
+是一种简单的屏幕密度适配解决方案。可以在多种设备上维持真实尺寸
+
+sp 有点像dp单位。但是他也根据用户的字体设置缩放尺寸。建议用这种尺寸单位来标注字体尺寸。
+
+pt 屏幕的物理尺寸 英寸
+
+px相当于真是像素。不建议使用
+
+
+资源类型
+l 0.75 120dpi
+m 1 160dpi
+h 1.5 240dpi
+x 2 320dpi
+xx 3 480dpi
+
+
+一般设计给切图，应该给480*800dpi切图。这样对于mdpi可以自动缩放。对于xdpi，放大幅度不大。图像显示质量影响较小
+
+dp的工作原理  px = dp * density  如果mdpi设为1.
+所以在mdpi中1px 等于 1dp,一般它的屏幕宽度是320px
+dp就相当于是一个比例。但是不是所有情况都适用。要知道针对xhdpi需要720/2 = 360dp ，不是320dp
+所以尽量使用dp不表示一个固定的尺寸。而是表示padding,margin能间隔。
+
+//UI-width webapp布局宽度
+//屏幕分辨率宽度
+get-target-densitydpi = UI-width / device-width * 
+window.devicePixelRatio * 160
+
+测试程序代码如下
+<script>
+	var adaptUILayout = (function () {
+		var regualteScreen = (function () {
+			var cache = {}
+			//默认尺寸
+			var defSize = {
+				width:window.screen.width,
+				height:window.screen.height
+			}
+
+			var ver = window.navigator.appVersion
+			var _ = null
+			var check = function (key) {
+				return key.constructor === String ? ver.indexOf(key) > -1 : ver.test(key)
+			}
+			var add = function (name, key, size) {
+				if(name && key) {
+					cache[name] = {
+						key:key,
+						size:size
+					}
+				}
+			}
+			var del = function (name) {
+				if(cache[name]) {
+					delete cache[name]
+				}
+			}
+			var cal = function () {
+				if(_ !== null) {
+					return _
+				}
+				for(var name in cache) {
+					if(check[cache[name].key]) {
+						_ = cache[name].size
+						break
+					}
+				}
+				if(_ == null) {
+					_ = defSize
+				}
+				return _
+			}
+			return {
+				add: add,
+				del: del,
+				cal: cal
+			}
+		})()
+
+		var adapt = function (uiWidth) {
+			var deviceWidth
+			var devicePixelRatio
+			var targetDensitydpi
+			var initialContent
+			var head
+			var viewport
+			var ua
+			ua = navigator.userAgent.toLowerCase()
+			isiOS = ua.indexOf('ipad') > - 1 || ua.indexOf('iphone') > -1
+			devicePixelRatio = window.devicePixelRatio
+			deviceWidth = regualteScreen.cal().width()
+			targetDensitydpi = uiWidth / deviceWidth * devicePixelRatio * 160
+			initialContent = isiOS ? 
+			    'target-densitydpi = device-dpi,width' + uiWidth + 'px,user-scalable=no':
+			    'target-densitydpi =' + targetDensitydpi + ', width = device-width,user-scalable=no' 
+			head = document.getElementByTagName('head')
+			viewport = document.createElement('meta')
+			viewport.name = 'viewport'
+			viewport.content = initialContent
+			head.length > 0 && head[head.length - 1].appendChild(viewport)
+			return {
+				regualteScreen: regualteScreen,
+				adapt:adapt
+			}
+		}
+	})()
+</script>
