@@ -1,0 +1,105 @@
+UI的尺寸的问题
+理论知识
+分辨率 iphone6 750px*1334px(4.7英寸) iphone5s 640px*1136px（4英寸）
+屏幕尺寸 用屏幕对角线的长度来衡量 单位英寸 1英寸=2.54cm
+ppi 像素密度（每个英寸上所拥有的像素数目） 屏幕分辨率对角线勾股定理除以屏幕尺寸
+pt（逻辑像素） 视网膜屏幕 1pt = 2px
+px 物理像素
+dpi 每英寸上点的个数。pt的个数
+
+iphone手机的尺寸 pt
+android尺寸 dp,sp
+
+手势事件
+touchstart
+touchmove
+touchend
+touchcancel
+
+触摸事件
+gesturestart 双指触摸屏幕
+gesturechange 双指移动
+gestureend
+
+屏幕旋转
+onorientationchange
+
+touch事件支持的相关属性
+touches
+targetTouches
+changedTouches
+clientX
+clientY
+screenX
+screenY
+pageX  针对整个页面。包括滚动
+pageY
+target 
+identifier 对每个触摸事件的特殊数字
+
+判断屏幕是否旋转
+<script>
+    function orientationChange () {
+        switch (window.orientation) {
+            case 0:
+                alert('肖像模式0,screen-width' + screen.width + ";screen-height:" + screen.height)
+                break
+            case -90:
+                alert('左旋-90,screen-width' + screen.width + ";screen-height:" + screen.height)
+                break
+            case 90:
+                alert('右旋-90,screen-width' + screen.width + ";screen-height:" + screen.height)
+                break
+            case 180:
+                alert('风景模式180,screen-width' + screen.width + ";screen-height:" + screen.height)
+                break
+        }
+    }
+    window.addEventListener('load',function(){
+        orientationChange()
+        window.onorientationchange = orientationChange
+    })
+</script>
+
+
+css pixels浏览器使用的抽象单位
+device pixels 显示屏幕的最小物理单位。每个dp包含自己的颜色，亮度
+dpi 物理尺寸比/设备像素比
+ppi,有时也叫DPI.表示的是每英寸所拥有的像素pixel数目。数值越高，显示图像越清晰。这里的像素是指device pixels
+
+dips（device-independent-pixels） 设备独立像素
+设备像素比window.devicePixelRatio是设备上物理像素和设备独立像素的比例  window.devidePixelRatio = 物理像素/dips
+
+
+非视网膜屏幕 window.devicePixelRatio等于1
+视网膜屏幕 屏幕物理像素是640px,独立像素还是320px,此时window.devicePixelRatio等于2
+
+
+layout viewport
+1.safari iphone 980px
+2.opera 850px
+3.android webkit 800px
+4 ie 974px
+<style>
+    div.sidebar{
+        width:300px;
+    }
+    @media all and (max-width: 320px) {
+        div.sidebar{
+            width:100px;
+        }
+    }
+</style>
+
+<meta name="viewport" content="width=devide-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0">
+<!-- 注意content属性的设置一定要用分号加空格来隔开，否则可能不起作用 -->
+<meta name="app-mobile-web-app-capable" content="yes">
+<!-- iphone中safari使用meta标签，允许全屏模式浏览。 -->
+<meta name="app-mobile-web-app-status-bar-style" content="black">
+<!-- 也是iphone私有标签，指定iphone中safari顶端的状态条的样式 -->
+<meta name="format-detection" content="telephone=no">
+<!-- 忽略将页面中的数字识别为电话号码 -->
+
+媒体查询常用样式表
+<link rel="stylesheet" media="all and (orientation:portrait)"href="portrait.css"><!-- 竖屏 -->
+<link rel="stylesheet" href="landscape.css" media="all and (orientation:landscape)"><!-- 横屏 -->
