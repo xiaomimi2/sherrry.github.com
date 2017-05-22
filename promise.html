@@ -1,0 +1,119 @@
+ES6 构造函数Promise函数
+
+<script>
+    //这个promise对象可以调用then的方法来设置resolve后的回调函数。catch方法来设置错误时的回调函数
+    var promise = new Promise(function(resolve, reject) {
+        //异步处理。处理结束后。调用resolve,reject
+    })
+</script>
+PromiseA 的三种状态  Pending,Fullfilled,Rejected
+
+
+Promise.reject是和Promise.resolve类似的静态方法。
+Promise.resolve 作为new Promise()的快捷方式。用来测试代码非常方便。
+Promise.all() 计收一个promise对象的数组作为参数。所有promise对象都变成resolve或者reject状态的时候才会去调用then方法。
+<script>
+    function timerPromisefy (delay) {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                resolve(delay)
+            }, delay)
+        })
+    }
+    var startDate = Date.now()
+    Promise.all([timerPromisefy(1), timerPromisefy(32), timerPromisefy(64), timerPromisefy(128)])
+            .then(function (values) {
+                console.log(Date.now() - startDate + 'ms') //130ms 从这个结果基本可以看出promise数组中的项是基本同步进行的。
+                console.log(values) //[1, 32, 64, 128] //返回的结果也是按照顺序的。
+            }) 
+</script>
+Promise.race()  每个promise函数的异步都会执行。但是then只只执行第一个成功的promise的返回的。
+<script>
+    function timerPromisefy (delay, mes) {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                console.log(mes)
+                resolve(mes)
+            }, delay)
+        })
+    }
+    Promise
+            .race([timerPromisefy(12, '我是快的'), timerPromisefy(100, '我是慢的')])
+            .then(function (value) {
+                console.log(value)
+           })
+    //我是快的，我是快的，我是慢的
+</script>
+
+
+<script>
+    var prmose = Promise.resolve($.ajax('json/comment.json'))
+    promise.then(function (value) {
+        console.log(value)
+    })
+
+    Promise.reject(new Error('Boom')).catch(function (err){
+        console.error(err)
+    })
+</script>
+
+
+Promise只能进行异步操作！！！！！！！！！！！！！then方法的调用是异步的。
+只用使用回调函数的时候可能会有同步调用的情况
+<script>
+    var promise = new Promise(function (resolve) {
+        console.log('innerPormise')
+        resolve(42)
+    })
+    promise.then(function (value) {
+        console.log(value)
+    })
+    console.log('outer')
+    //innerPromise outer 42
+</script>
+
+
+promse chain中如何传递参数。
+return 的返回值会传递。
+每个方法中的return的值不仅局限于字符串或者数值类型。也可以时对象或者promsie对象等复杂类型。
+return的值会有Promise.resolve（return的返回值）进行相应的包装处理。因此不管回调函数中会返回一个什么样的值。最终then的结果都是返回一个新创建的值。
+
+
+
+注意事项catch在ECMAscript中的保留字。IE8及以下的浏览器都是基于ECMAScript3来实现的。因此不能讲catch作为属性使用。也不能编写类似promise.catch()的代码。
+polyfill
+promise['catch']的方法来解决。
+
+
+ 
+Promise测试  Mocha框架 通过直接返回一个promise对象来解决这个问题
+在mocha测试中用then(onfullfiled, onrejected)这种形式来判断最终的结果。
+<script>
+    describe('should use done for test?' function (done) {
+        var promise = Promise.resolve()
+        promise.then( function (value) {
+            assert(false) //assert失败时调用done
+            done()
+        })
+    })
+    //asser失败的时候会throw一个error,测试框架会捕获该error,来判断测试失败。。但是在promise的情况下。then绑定的函数执行执行时发生的error会被Promise捕获。而测试框架对此一无所知。
+    describe('Promise Test', function () {
+        it('shoud return a promise object', function () {
+            var promise = Promise.resolve(1)
+            return promise.then(function (value) {
+                assert(value === 1)
+            })
+        })
+    })    
+</script>
+
+<script>    
+    var promise  = Promise.resolve(1)
+    promise.then(function () {
+        throw new Error('我不知道能不能被显示') //会报错。
+    })
+</script>
+
+
+
+
