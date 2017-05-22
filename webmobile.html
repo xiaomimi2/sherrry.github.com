@@ -1,10 +1,10 @@
-UI的尺寸的问题
+web UI的尺寸的问题
 理论知识
 分辨率 iphone6 750px*1334px(4.7英寸) iphone5s 640px*1136px（4英寸）
 屏幕尺寸 用屏幕对角线的长度来衡量 单位英寸 1英寸=2.54cm
 ppi 像素密度（每个英寸上所拥有的像素数目） 屏幕分辨率对角线勾股定理除以屏幕尺寸
-pt（逻辑像素） 视网膜屏幕 1pt = 2px
-px 物理像素
+pt 视网膜屏幕 1pt = 2px  
+px 
 dpi 每英寸上点的个数。pt的个数
 
 iphone手机的尺寸 pt
@@ -62,6 +62,12 @@ identifier 对每个触摸事件的特殊数字
 </script>
 
 
+webkit css详情查看
+-webkit-appearance:none|button|button-level
+-webkit-border-bottom-left-radius:radius
+-webkit-border-top-left-radius: horizontal_radius vertical_radius
+-webkit-border-radius: radius
+
 css pixels浏览器使用的抽象单位
 device pixels 显示屏幕的最小物理单位。每个dp包含自己的颜色，亮度
 dpi 物理尺寸比/设备像素比
@@ -103,3 +109,12 @@ layout viewport
 媒体查询常用样式表
 <link rel="stylesheet" media="all and (orientation:portrait)"href="portrait.css"><!-- 竖屏 -->
 <link rel="stylesheet" href="landscape.css" media="all and (orientation:landscape)"><!-- 横屏 -->
+
+<script>
+    var  sortArray = function (arr1, arr2) {
+        var arr = arr1.concat(arr2)
+        arr.sort(function (a,b) {
+            return a - b
+        })
+    }
+</script>

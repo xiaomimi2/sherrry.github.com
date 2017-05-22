@@ -123,3 +123,202 @@ window.devicePixelRatio * 160
 		}
 	})()
 </script>
+
+常用的meta标签
+
+IOS
+<meta name="apple-touch-fullscreen" content="yes"> 全屏
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="format-detection" content="telephone=no">
+<meta name="format-detection" content="email=no">
+<style>
+	body {
+		font-family:'Helvetica Neue', Helvetica, STHeiTi, sans-serif;
+	}
+	a,button,input,textarea{
+		-webkit-tap-highlight-color:rgba(0,0,0,0);
+		-webkit-user-modify:read-write-plaintext-only;
+	}
+	input[type=number]::-webkit-textfield-decoration-container {
+		background-color:transparent;
+	}
+	input[type=number]::-webkit-inner-spin-button {
+		-webkit-appearance:none;
+	}
+	input[type=number]::-webkit-outer-spin-button {
+		-webkit-appearance:none;
+	}
+	input{
+		-webkit-appearance:none;
+	}
+</style>
+
+rem公式
+<style lang="scss">
+	@function px($px) {
+		@return ($px / 40) + rem
+	}
+</style>
+
+
+flex布局的学习
+
+
+单行多行的
+<style>
+	div{
+		overflow:hidden;
+		text-overflow:ellipsis;
+		white-space:nowrap;
+	}
+	/*多行截字*/
+	div{
+		display:-webkit-box;
+		-webkit-box-orient:vertical;
+		-webkit-line-clamp:3;
+		overflow:hidden;
+	}
+</style>
+
+
+移动全兼容flexbox
+<style>
+	.flex-cont {
+		display:-webkit-box;
+		display:-webkit-flex;
+		display:flex;
+		align-item:flex-start|flex-end|center|space-between|space-around|stretch;
+		justify-content: flex-start | flex-end | center | space-between | space-around;
+	}
+	.flex-item{
+		-webkit-box-flex:1;
+		-webkit-flex:1;
+		flex:1;
+		width:0%;
+	}
+	.flex-tab li{
+		position:relative;
+		display:block;
+		box-sizing:border-box;
+		-webkit-box-sizing:border-box;
+		width:0%;
+		-webkit-box-flex:1;
+		-webkit-flex:1;
+		flex:1;
+	}
+	/*垂直居中布局*/
+	.flex-centerbox {
+		width:100%;
+		height:200px;
+		background:#fafafa;
+		-webkit-box-pack:center;
+		-webkit-justify-content: center;
+		justify-content: center;
+		-webkit-box-align:center;
+		-webkit-align-items:center;
+		align-items:center;
+	}
+	.page .flex-ver {
+		-webkit-box-orient: vertical;
+		-webkit-box-direction:normal;
+		-webkit-flex-direction:column;
+		flex-direction:column;
+		width:100%;
+		height:100%;
+	}
+</style>
+
+重点:在旧版的规范中。子元素的内容长短不同会导致无法等分。这个时候给子元素设置width:0%。不要给flexbox中的资源苏设置‘margin:auto’属性。在部分安卓机下，它会导致该元素的宽度撑开到100%占位。
+
+
+手势库使用hammerJS 
+
+链接知识
+一。设备像素比devicePixelRatio介绍
+window.devidePixelRatio = 物理像素/dips
+在甚至了meta viewport标签后，在大部分的浏览器下得到的布局document.documentElement.clientWidth都是dips宽度
+在IOS设别上 视网膜设备 screen.width是dips宽  dip = screen.width
+在Android设备上，screen.width返回的是设备的物理像素。分别是480,720,800 
+dips = screen.width / devicePixel
+
+视觉稿
+以前是320*480 现在更多是iphone6的375*667
+对于retina的屏幕，为了达到高清的效果。视觉稿的画布大小回事基准的两倍。对于iphone6而言会变成750*1334
+
+物理像素:在显示器上的最小的物理显示单位。一个逻辑像素px可能对应1个物理像素，也可能对应4个物理像素
+设备独立像素:计算机坐标系统中的一个点。可以代表由程序所使用的虚拟像素。然后由系统转换为物理像素。
+设备像素比 = 物理像素 / 设备独立像素
+（可以通过 -webkit-device-pixel-ratio, -webkit-min-device-pixel-ratio, -webkit-max-device-pixel-ratio来进行媒体查询）
+
+对于retina屏，图片是位图元素，一个位图元素对应一个物理像素
+所以对于retina屏，图片需要的尺寸是原来的大小的两倍。
+为了满足border:1px 的关系。就是1px物理像素。这个时候可以认为css的像素是0.5px.但是不是所有手机浏览器都鞥呢识别border:0.5px。在Android其他系统里，会把0.5px当成0px处理。方法是scale页面。在meta标签内maximum-scale=0.5
+
+<script>
+	var dpr, rem, scale
+	var docEl = document.documentElement
+	var metaEl = document.querySelector('meta[name="viewport"]')
+	dpr = window.devicePixelRatio || 1
+	rem = docEl.clientWidth * dpr / 10
+	scale = 1 / dpr
+
+</script>
+<script>
+	function createTipicleNumber (arr) {
+		var value = Math.floor(Math.random() * 10)
+		if (arr.indexOf(value) === -1) {
+			arr.push(value)
+		} else {
+			createTipicleNumber(arr)
+		}
+	}
+
+	var stategies = {
+		first: function () {
+			return 'Fizz'
+		},
+		second: function () {
+			return 'Buzz'
+		},
+		third: function () {
+			return 'Whizz'
+		},
+		contain: function (num, first) {
+			if (String(num).indexOf(first) > -1) {
+				return true
+			}
+		}
+	}
+
+	function judge (num, arr) {
+		var start = arr[0]
+		var result
+		if (stategies.contain(num, start)) {
+			return stategies.first()
+		}
+		if (num % arr[0] === 0) {
+			result += 'Fizz'
+		}
+		if (num % arr[1] === 0) {
+			result += stategies.second()
+		}
+		if(num % arr[2] === 0) {
+			result += stategies.third()
+		}
+		return result
+	}
+	function start() {
+		var arr=[]
+		for (var j = 0; j < 3; j++) {
+			createTipicleNumber(arr)
+		}
+		console.log(arr)
+		// for (var i = 1; i <=100; i++) {
+		// 	 console.log(judge(i, arr))
+		// }
+	}
+	
+</script>
