@@ -1,0 +1,67 @@
+define(id, dependencies, factory)
+id 如果没有执行，默认为模块所在文件的访问路径
+dependencies是由模块标识组成的数组。可选
+
+强烈推荐不要设定id和dependencies。模块加载器会自动获取这两个参数。
+
+factory 模块的工厂函数。会调用且只调用一次.可以是函数或者字符串等任意值。
+<script>
+	define(function (require, exports, module) {
+		exports.doSomething = function () {
+			console.log('something')
+		}
+		exports.foo = 'bar'
+	})
+
+	define(function (require, exports, module) {
+		return {
+			foo: 'bar',
+			doSomething: function () {}
+		}
+	})//如果return是唯一代码可以简化成
+	define({
+		foo: 'bar',
+		doSomething: function () {}
+	})
+</script>
+
+工厂函数中的exports用来向外提提供api。
+除了给exports对象增加成员，还可以使用return直接向外提供api
+require用来加载模块
+require.async()异步加载，
+require.resolve()用来解析并返回模块路径，不会加载模块，只会返回路径
+require.load()可以用来异步加载脚本，并在执行完成后执行指定的回调函数。开发插件的时候，可以通过覆盖方法来实现自定义的资源加载。
+require.constructor来使用require对象的一些公用属性和方法。
+<script>
+	define(function (require, exports, module) {
+		require.async('./b', function (b) {
+			b.doSomething()
+		})
+	})
+
+	//加载多个模块
+	define(function (require, exports, module) {
+		require.async()
+	})
+</script>
+
+
+module参数存储单元的元信息
+module.id当前模块的唯一表示符
+<script>
+	define(function (require, exports, module) {
+		require(module.id) === exports
+		module.exports === exports
+		var Module = module.constructor
+		Module.prototype.filename = function () {
+			var id  = this.id
+			var parts = id.split('/')
+			return parts[parts.length - 1]
+		}
+	})
+
+	//a.js
+	define(function (require, exports, module) {
+		exports.filename = module.filename()
+	})
+</script>

@@ -1,0 +1,99 @@
+<script>
+	new Promise(function(resolve,reject){
+		resolve(42)
+	})
+	Promise.resolve(42) //这个可以方便的来快速测试
+</script>
+<script>
+	new Promise(function(resolve,reject){
+		reject(new Error('出错了'))
+	})
+	Promise.reject(new Error('boom')).catch(function(err){
+		console.log(err)
+	})
+</script>
+上面的函数功能相同。但是Promise.resolve()可以直接返回一个promise对象。后面可以直接增加then，catch等的方法。
+
+
+即使Promise是同步调用的，但是还是会显示出异步的效果,但是对于回调函数，最后条件满足还是同步执行回调的。
+如果回调函数变成同步执行。可能和预想的行为有很大的出入。所以这时候比较适合使用promise这种异步调用的方法。
+<script>
+	var promise = new Promise(function(resolve){
+		console.log('innerPromise')
+		resolve(42)
+	})
+	promise.then(function(value){
+		console.log(value)
+	})
+	console.log('outerpromise')
+</script>
+//结果是outerpromise在42之前输出。
+
+promise chain中如何传递参数，通过renturn的方法传给下一个参数。如果之前有错误了，后面的then会继续执行，但是值就不会传过去了
+
+在IE8不能使用catch.因为IE8是根据ECMScript3来的。其中catch时保留字。在IE8下会报错identifier not found。在ECMScript中保留字都属于 identifierName,也可以作为属性名用了。
+解决方法
+对象点标记法必须是有效的标识符
+对象的中括号标记法可以吧非合法的标识符作为对象的属性名来使用。
+<script>
+	var promise = Promise.reject(new Error('message'))
+	promise['catch'](function(error){
+		console.log(error)
+	})
+</script>
+或者直接使用promise.then(undefined,onreject)的方法来代替
+<script>
+	var apromise = new Promise(function(resolve){
+		resolve(100)
+	})
+	apromise.then(function(){
+		return value*1
+	})
+	apromise.then(function(){
+		return value*2
+	})
+	apromise.then(function(){
+		console.log(value) //100
+	})
+</script>
+这里没有链式调用就没有新的promise对象。没有进行值传递
+
+
+
+因为每次promise.then的方法返回的都是一个新的promise对象（特别注意是新的）
+
+Promise.all接受一个promise对象的数组，这是一个并行处理的过程，不是串行处理的。
+promise.race和Promise.all方法相同，但是只要有一个成功就会执行then。并且也是都会执行的。按照不同的执行顺序执行出来。而all要所有的成功了才执行then
+
+用mocha做Promise的测试的时候,不是执行done()这个回调函数，而是需要返回一个promise对象。
+编写可控测试
+如果编写预期为fullfilled状态的测试的话。rejected一定要fail
+assertion的结果不一致的时候要fail
+如果是rejected状态的话
+结果为fullfilled要fail
+assertion的结果不一致的时候要fail
+<script>
+	function failtest() {
+		throw new Error('error')
+	}
+	promise.then(failTest,function(error) {
+		assert(error instanceof Error)
+	})
+</script>
+
+
+
+
+补充知识
+DOM文档加载的步骤html,css,js,dom树（domContentLoaded），加载图片等外部文件。页面解析完毕（load）
+用jquery来表示就是
+<script>
+	$(document).ready(function(){})
+	$(document).load(function(){})
+</script>
+DOMContentLoaded
+
+
+
+
+
